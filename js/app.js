@@ -119,7 +119,7 @@
   function nuovaFornitura() {
     fileScelto = null; $("#titolo-fornitura").value = ""; dz.classList.remove("scelto");
     $("#dz-testo").textContent = "Trascina qui lo zip con la cartella degli shapefile o con il File Geodatabase";
-    $("#sez-report").hidden = true; $("#avviso-gdb").hidden = true; $("#esito-topologia").innerHTML = ""; resetLista(); pronto();
+    $("#sez-report").hidden = true; $("#avviso-gdb").hidden = true; resetLista(); pronto();
   }
   $("#btn-nuova").addEventListener("click", nuovaFornitura);
   function passo() { /* nessun indicatore di passi in questa versione */ }
@@ -356,32 +356,32 @@
     } finally { w.terminate(); }
   }
   // Controllo topologico: nel browser per gli shapefile (js/topologia.js), sul web tool regionale per i gdb.
-  // Esito separato; report PDF e pacchetto errori conservati nel browser con la fornitura.
+  // Report PDF e pacchetto errori conservati nel browser con la fornitura; alla fine l'esito unico della fornitura.
   async function avviaTopologia(file, ctx) {
-    const box = $("#esito-topologia"), u = ULTIMO, id = u && u.id;
+    const u = ULTIMO, id = u && u.id;
     const fase = (s) => { const x = $("#topo-stato"); if (x) x.textContent = s; };
     let rep, pdf, zip, formato;
     statoControllo("topologia", "run");
     try {
       if (ctx && window.TOPOLOGIA) {
-        box.innerHTML = '<div class="msg msg-info"><strong>Controllo topologico in corso…</strong> <span id="topo-stato"></span></div>';
+        attesa("Attributi controllati. Controllo topologico in corso…");
         ({ rep, zip } = await topologiaInWorker(file, ctx.shp, ctx.dati, u.comune, fase));
         pdf = window.TOPOLOGIA.pdf(rep, u); formato = "shp";
       } else if (CFG.topoUrl) {
         formato = $("#formato-errori").value;
-        box.innerHTML = `<div class="msg msg-info"><strong>Controllo topologico in corso sul server…</strong> <span id="topo-stato"></span><div class="small">Può richiedere alcuni minuti: l'esito degli attributi è già salvato.</div></div>`;
+        attesa("Attributi controllati. Controllo topologico in corso sul server, può richiedere alcuni minuti…");
         const r = await eseguiJob(CFG.topoUrl, file, { nome_fornitura: file.name, comune: u.comune, formato_errori: formato },
           ["report_json_testo", "report_pdf_b64", "errori_zip_b64"], (s) => fase(`(${s})`));
         rep = JSON.parse(r.report_json_testo);
         pdf = daBase64(r.report_pdf_b64, "application/pdf"); zip = daBase64(r.errori_zip_b64, "application/zip");
       } else {
         statoControllo("topologia", "warn");
-        box.innerHTML = '<div class="msg msg-info"><strong>Controllo topologico non eseguito:</strong> per i File Geodatabase serve il servizio regionale, non collegato a questo mockup.</div>';
+        esitoFinale(null, null, null);
         return;
       }
     } catch (e) {
       statoControllo("topologia", "ko");
-      box.innerHTML = `<div class="msg msg-warn"><strong>Controllo topologico non eseguito.</strong> ${esc(e.message || e)}</div>`;
+      esitoFinale(null, null, "controllo topologico non eseguito: " + (e.message || e));
       return;
     }
     const topo = { esito: rep.esito, errori: rep.errori, avvisi: rep.avvisi, formato };
@@ -390,18 +390,51 @@
       await window.SERVIZI.salvaFile(id + ":topo_pdf", pdf); await window.SERVIZI.salvaFile(id + ":topo_zip", zip);
       window.SERVIZI.aggiornaFornitura(id, { topologia: topo });
     }
-    mostraTopologia(topo, URL.createObjectURL(pdf), URL.createObjectURL(zip), id);
-    if (!u.nErr) $("#esito-nota").innerHTML = rep.errori
-      ? `<div class="msg msg-warn">Gli errori topologici sono bloccanti: la fornitura è salvata ma <strong>non è utilizzabile per la composizione delle tavole</strong>. Correggi gli errori indicati nel pacchetto e ricaricala.</div>`
-      : `<div class="msg msg-info">Attributi e topologia conformi: la fornitura è utilizzabile per la <a href="#/tavole">composizione delle tavole</a>.</div>`;
+    esitoFinale(topo, { pdf: URL.createObjectURL(pdf), zip: URL.createObjectURL(zip) }, null);
   }
-  function mostraTopologia(t, pdfUrl, zipUrl, id) {
-    $("#esito-topologia").innerHTML = `<div class="esito esito-sm ${t.errori ? "ko" : "ok"}"><div>
-      <div class="esito-titolo">Topologia ${t.errori ? "NON CONFORME" : "CONFORME"}</div>
-      <div class="esito-meta">${t.errori} errori, ${t.avvisi} avvisi (geometrie, sovrapposizioni, buchi, sconfinamenti)</div></div></div>
-      <div class="d-flex flex-wrap gap-2 mt-2">
-        <a class="btn btn-primary btn-sm" href="${pdfUrl}" download="report_topologia_${esc(id)}.pdf">Report topologico PDF</a>
-        <a class="btn btn-outline-primary btn-sm" href="${zipUrl}" download="errori_topologia_${esc(id)}_${t.formato}.zip">Pacchetto errori (${t.formato === "gdb" ? "File Geodatabase" : "shapefile"})</a></div>`;
+
+  // riquadro neutro mentre i controlli sono in corso: nessun esito finche' attributi e topologia non sono conclusi
+  function attesa(testo) {
+    $("#esito").className = "esito attesa";
+    $("#esito").innerHTML = `<span class="giro"></span><div><div class="esito-titolo">Verifica in corso</div>
+      <div class="esito-meta">${esc(testo)} <span id="topo-stato"></span></div></div>`;
+    $("#esito-nota").innerHTML = ""; $("#azioni-report").hidden = true;
+    $("#sez-report").hidden = false;
+  }
+
+  // esito unico della fornitura: stessa regola che decide se la fornitura e' utilizzabile per le tavole
+  function esitoFinale(topo, link, problemaTopo) {
+    const u = ULTIMO, id = u.id;
+    const uso = window.SERVIZI ? window.SERVIZI.statoUso({ ...u, topologia: topo || undefined }) : { ok: !u.nErr, motivo: "" };
+    const ok = uso.ok && !problemaTopo;
+    const presenti = Object.values(u.quadro).filter((x) => x.stato === "presente").length;
+    const prime = sintesi(u.E).filter((r) => r[0] === "ERRORE").slice(0, 3).map((r) => `${r[1]} (${r[2]}: ${r[3]})`);
+    const tTopo = topo ? `topologia ${topo.errori} errori, ${topo.avvisi} avvisi` : "topologia non verificata";
+    $("#esito").className = "esito " + (ok ? "ok" : "ko");
+    $("#esito").innerHTML = `<svg class="ico" style="width:2.5rem;height:2.5rem;flex-shrink:0" viewBox="0 0 24 24"><path d="${ok
+      ? "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-2 15-5-5 1.4-1.4 3.6 3.6 7.6-7.6L19 8l-9 9Z"
+      : "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 15h-2v-2h2v2Zm0-4h-2V7h2v6Z"}"/></svg>
+      <div><div class="esito-titolo">${ok ? "Fornitura CONFORME" : "Fornitura NON CONFORME"}</div>
+      <div class="esito-meta">${esc(u.titolo)} · ${esc(u.comune)} – ${esc(u.strumento)} · ${presenti} layer su ${R.layer.length} · ${esc(u.crsTxt)}</div>
+      <div class="esito-meta">Attributi ${u.nErr} errori, ${u.nAv} avvisi · ${tTopo}</div></div>`;
+    const motivi = [];
+    if (u.nErr) motivi.push(`attributi non conformi${prime.length ? ` (principali errori: ${prime.join("; ")})` : ""}`);
+    if (topo && topo.errori) motivi.push(`${topo.errori} errori topologici (geometrie, sovrapposizioni): vedi il report topologico e il pacchetto errori`);
+    if (problemaTopo) motivi.push(problemaTopo);
+    else if (!ok && !u.nErr && !(topo && topo.errori) && uso.motivo) motivi.push(uso.motivo);
+    $("#esito-nota").innerHTML = ok
+      ? `<div class="msg msg-info">Attributi e topologia conformi: la fornitura è salvata in <a href="#/forniture">Le mie forniture</a> ed è utilizzabile per la <a href="#/tavole">composizione delle tavole</a>.${uso.motivo ? `<div class="small mt-1">Nota: ${esc(uso.motivo)}.</div>` : ""}</div>`
+      : `<div class="msg msg-warn">La fornitura è salvata in <a href="#/forniture">Le mie forniture</a>, ma <strong>non è utilizzabile per la composizione delle tavole</strong>. Correggi e ricaricala.
+         <ul class="small mb-0 mt-1">${motivi.map((m) => `<li>${esc(m)}</li>`).join("")}</ul></div>`;
+    const tp = $("#btn-topo-pdf"), tz = $("#btn-topo-zip");
+    tp.hidden = tz.hidden = !link;
+    if (link) {
+      tp.href = link.pdf; tp.download = `report_topologia_${id}.pdf`;
+      tz.href = link.zip; tz.download = `errori_topologia_${id}_${topo.formato}.zip`;
+      tz.textContent = `Pacchetto errori topologici (${topo.formato === "gdb" ? "File Geodatabase" : "shapefile"})`;
+    }
+    $("#azioni-report").hidden = false;
+    $("#sez-report").scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
   // Report JSON prodotto da valida_attributi.py -> stessa visualizzazione del controllo nel browser
   function mostraDaServer(rep, nomeFile, pdfUrl) {
@@ -432,22 +465,7 @@
       formato: /gdb/i.test(nomeFile) ? "gdb" : "shapefile", id: "PSC-" + Date.now().toString(36).toUpperCase() };
     if (window.SERVIZI) window.SERVIZI.registraFornitura(ULTIMO);
 
-    const presenti = Object.values(quadro).filter((x) => x.stato === "presente").length;
-    const prime = sintesi(E).filter((r) => r[0] === "ERRORE").slice(0, 3).map((r) => `${r[1]} (${r[2]}: ${r[3]})`);
-    $("#esito").className = "esito " + (nErr ? "ko" : "ok");
-    $("#esito").innerHTML = `<svg class="ico" style="width:2.5rem;height:2.5rem;flex-shrink:0" viewBox="0 0 24 24"><path d="${nErr
-      ? "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 15h-2v-2h2v2Zm0-4h-2V7h2v6Z"
-      : "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-2 15-5-5 1.4-1.4 3.6 3.6 7.6-7.6L19 8l-9 9Z"}"/></svg>
-      <div><div class="esito-titolo">${nErr ? "Fornitura NON CONFORME" : "Fornitura CONFORME"}</div>
-      <div class="esito-meta">${esc(ULTIMO.titolo)} · ${esc(ULTIMO.comune)} – ${esc(ULTIMO.strumento)} · ${presenti} layer su ${R.layer.length} · ${esc(ULTIMO.crsTxt)} · ${nErr} errori, ${nAv} avvisi</div></div>`;
-    $("#esito-nota").innerHTML = nErr
-      ? `<div class="msg msg-warn">La fornitura è salvata in <a href="#/forniture">Le mie forniture</a>, ma <strong>non è utilizzabile per la composizione delle tavole</strong> finché non è conforme.
-         Correggi gli errori indicati nel report e ricaricala.${prime.length ? `<div class="small mt-1">Principali errori: ${prime.map(esc).join("; ")}.</div>` : ""}</div>`
-      : CFG.topoUrl
-        ? `<div class="msg msg-info">Attributi conformi. La fornitura è salvata in <a href="#/forniture">Le mie forniture</a> e diventa utilizzabile per la composizione delle tavole <strong>se anche il controllo topologico è conforme</strong>.</div>`
-        : `<div class="msg msg-info">La fornitura è salvata in <a href="#/forniture">Le mie forniture</a> ed è utilizzabile per la <a href="#/tavole">composizione delle tavole</a>. Il controllo topologico, bloccante, non è ancora collegato a questo mockup.</div>`;
-    $("#sez-report").hidden = false;
-    $("#sez-report").scrollIntoView({ behavior: "smooth", block: "nearest" });
+    attesa("Attributi controllati. Avvio del controllo topologico…");
   }
   window.APP = {
     reportPdf(f) { creaPdf(f); },

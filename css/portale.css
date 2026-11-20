@@ -207,3 +207,12 @@ h4, .h4, h5, .h5 { font-size: 1.1rem; } h6, .h6 { font-size: 1rem; }
 /* esito del controllo topologico, più compatto */
 .esito.esito-sm { padding: .75rem 1rem; }
 .esito.esito-sm .esito-titolo { font-size: 1.1rem; }
+
+/* esito in attesa: nessun verdetto finché attributi e topologia non sono conclusi */
+.esito.attesa { background: #e6f0fa; color: #00264d; }
+.esito .giro { width: 2rem; height: 2rem; flex-shrink: 0; border-radius: 50%; border: 3px solid #99c2eb; border-right-color: transparent;
+  animation: giro .8s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .esito .giro { animation: none; } }
+
+/* l'attributo hidden prevale sulle classi di layout di Bootstrap (es. d-flex) */
+[hidden] { display: none !important; }
