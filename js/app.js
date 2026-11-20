@@ -69,14 +69,42 @@
     pronto();
   }
   // Comune: testo libero con suggerimenti, valido solo se e' un comune della Calabria (si normalizza la grafia)
+  // Menu a tendina con tutti i comuni della regione, filtrabile scrivendo
   const COMUNI = window.COMUNI_CALABRIA || [];
-  $("#lista-comuni").innerHTML = COMUNI.map((c) => `<option value="${esc(c)}">`).join("");
+  const inCom = $("#comune"), lista = $("#lista-comuni");
+  let attivo = -1;
   function comuneValido() {
-    const v = $("#comune").value.trim().toLowerCase();
+    const v = inCom.value.trim().toLowerCase();
     return COMUNI.find((c) => c.toLowerCase() === v) || null;
   }
-  $("#comune").addEventListener("input", pronto);
-  $("#comune").addEventListener("blur", () => { const c = comuneValido(); if (c) $("#comune").value = c; pronto(); });
+  function apriLista(tutti) {
+    const q = tutti ? "" : inCom.value.trim().toLowerCase();
+    const voci = COMUNI.filter((c) => c.toLowerCase().includes(q));
+    lista.innerHTML = voci.length
+      ? voci.map((c, i) => `<li role="option" data-c="${esc(c)}" id="com-${i}">${esc(c)}</li>`).join("")
+      : '<li class="vuota">Nessun Comune trovato</li>';
+    lista.hidden = false; lista.scrollTop = 0; inCom.setAttribute("aria-expanded", "true"); attivo = -1;
+    const sel = lista.querySelector(`li[data-c="${CSS.escape(inCom.value)}"]`);
+    if (sel) { sel.classList.add("attivo"); sel.scrollIntoView({ block: "nearest" }); }
+  }
+  function chiudiLista() { lista.hidden = true; inCom.setAttribute("aria-expanded", "false"); }
+  function scegliComune(c) { inCom.value = c; chiudiLista(); pronto(); }
+  inCom.addEventListener("focus", () => apriLista(true));
+  inCom.addEventListener("click", () => { if (lista.hidden) apriLista(true); });
+  inCom.addEventListener("input", () => { apriLista(false); pronto(); });
+  inCom.addEventListener("keydown", (e) => {
+    const voci = [...lista.querySelectorAll("li[data-c]")];
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault(); if (lista.hidden) apriLista(true);
+      attivo = Math.max(0, Math.min(voci.length - 1, attivo + (e.key === "ArrowDown" ? 1 : -1)));
+      voci.forEach((li, i) => li.classList.toggle("attivo", i === attivo));
+      if (voci[attivo]) { voci[attivo].scrollIntoView({ block: "nearest" }); inCom.setAttribute("aria-activedescendant", voci[attivo].id); }
+    } else if (e.key === "Enter") {
+      e.preventDefault(); const v = voci[attivo] || (voci.length === 1 ? voci[0] : null); if (v) scegliComune(v.dataset.c);
+    } else if (e.key === "Escape") chiudiLista();
+  });
+  lista.addEventListener("mousedown", (e) => { const li = e.target.closest("li[data-c]"); if (li) { e.preventDefault(); scegliComune(li.dataset.c); } });
+  inCom.addEventListener("blur", () => { chiudiLista(); const c = comuneValido(); if (c) inCom.value = c; pronto(); });
   function pronto() {
     const testo = $("#comune").value.trim();
     const mancano = [!$("#titolo-fornitura").value.trim() && "titolo", !comuneValido() && (testo ? "un Comune della Calabria valido" : "Comune"), !fileScelto && "archivio"].filter(Boolean);

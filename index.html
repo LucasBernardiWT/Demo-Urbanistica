@@ -221,9 +221,11 @@
             </div>
             <div class="col-md-7">
               <label for="comune" class="form-label-plain">Comune di appartenenza</label>
-              <input id="comune" class="form-control form-control-sm" type="text" list="lista-comuni" autocomplete="off"
-                placeholder="Scrivi il nome del Comune">
-              <datalist id="lista-comuni"></datalist>
+              <div class="combo" id="combo-comune">
+                <input id="comune" class="form-select form-select-sm" type="text" autocomplete="off" role="combobox"
+                  aria-expanded="false" aria-controls="lista-comuni" aria-autocomplete="list" placeholder="Seleziona o scrivi il Comune">
+                <ul id="lista-comuni" class="combo-lista" role="listbox" hidden></ul>
+              </div>
             </div>
           </div>
           <span class="form-label-plain">Archivio .zip</span>
