@@ -8,7 +8,8 @@
   const LAYER = window.REGOLE_QTRP.layer.map((l) => l.nome);
   const CAT = window.TAVOLE_QTRP;
   const TAV = Object.fromEntries(CAT.flatMap((g) => g.tavole.map((t) => [t.codice, { ...t, macro: g.macro }])));
-  const COMUNI = ["Lamezia Terme (079160)", "Catanzaro (079023)", "Cosenza (078045)", "Reggio di Calabria (080063)", "Crotone (101010)", "Vibo Valentia (102047)"];
+  // nei filtri compaiono solo i Comuni con forniture caricate (l'elenco completo serve solo al caricamento)
+  const comuniConDati = () => [...new Set(leggi().forniture.map((f) => f.comune))].sort((a, b) => a.localeCompare(b, "it"));
   const MAX_SEGNALAZIONI = 2000;
   const ora = () => new Date().toLocaleString("it-IT", { dateStyle: "short", timeStyle: "short" });
 
@@ -28,8 +29,8 @@
   function leggi() { try { return JSON.parse(localStorage.getItem("psc_mockup_v2")) || VUOTO(); } catch (e) { return VUOTO(); } }
   function scrivi(s) { try { localStorage.setItem("psc_mockup_v2", JSON.stringify(s)); } catch (e) { /* storage pieno o bloccato */ } }
   const lavoro = (s, c) => s.forniture.find((f) => f.id === s.lavoro[c]) || null;
-  let comuneCorrente = COMUNI[0];
-  try { comuneCorrente = localStorage.getItem("psc_mockup_comune") || COMUNI[0]; } catch (e) { /* default */ }
+  let comuneCorrente = "";
+  try { comuneCorrente = localStorage.getItem("psc_mockup_comune") || ""; } catch (e) { /* default */ }
 
   // IndexedDB per gli zip delle forniture
   function idb() {
@@ -54,14 +55,16 @@
 
   // selettori del Comune: uno per servizio, sincronizzati sul Comune corrente
   function popolaComuni() {
+    const comuni = comuniConDati();
+    if (!comuni.includes(comuneCorrente)) comuneCorrente = comuni[0] || "";
     document.querySelectorAll(".sel-comune").forEach((sel) => {
       const tutti = sel.dataset.tutti, prev = sel.value;
-      sel.innerHTML = (tutti ? '<option value="">tutti i Comuni</option>' : "") + COMUNI.map((c) => `<option>${esc(c)}</option>`).join("");
-      sel.value = tutti && prev === "" ? "" : comuneCorrente;
+      sel.innerHTML = comuni.length
+        ? (tutti ? '<option value="">tutti i Comuni</option>' : "") + comuni.map((c) => `<option>${esc(c)}</option>`).join("")
+        : '<option value="">nessun Comune con forniture</option>';
+      sel.value = tutti ? (comuni.includes(prev) ? prev : "") : comuneCorrente;
       sel.onchange = () => { if (sel.value) { comuneCorrente = sel.value; try { localStorage.setItem("psc_mockup_comune", comuneCorrente); } catch (e) { /* ignora */ } } vai(); };
     });
-    // carica e verifica: il Comune di appartenenza si sceglie esplicitamente, non e' un filtro
-    $("#comune").innerHTML = '<option value="">Seleziona il Comune</option>' + COMUNI.map((c) => `<option>${esc(c)}</option>`).join("");
   }
 
   // ---------------------------------------------------------------- navigazione
@@ -69,7 +72,7 @@
     const [vista, arg] = location.hash.replace(/^#\/?/, "").split("/");
     const v = VISTE[vista] ? vista : "home";
     document.querySelectorAll(".vista").forEach((d) => (d.hidden = d.dataset.vista !== v));
-    document.querySelectorAll(".sel-comune:not([data-tutti])").forEach((s) => (s.value = comuneCorrente));
+    popolaComuni();
     $("#band-titolo").textContent = VISTE[v][0];
     $("#band-sottotitolo").textContent = VISTE[v][1];
     $("#barra-contesto").hidden = v === "home";
@@ -160,7 +163,10 @@
     layerForm(tv ? tv.layer : null); controllaForm();
     $("#form-tavola").scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
-  $("#btn-nuova-tavola").addEventListener("click", () => apriForm(null));
+  $("#btn-nuova-tavola").addEventListener("click", () => {
+    if (!comuneCorrente) { alert("Carica prima una fornitura: le tavole appartengono al Comune della fornitura."); return; }
+    apriForm(null);
+  });
   $("#tv-annulla").addEventListener("click", () => { $("#form-tavola").hidden = true; modifica = null; if (dopoSalva) location.hash = dopoSalva; });
   $("#tv-salva").addEventListener("click", () => {
     const s = leggi(), pdf = $("#tv-pdf").files[0], l = lavoro(s, comuneCorrente);
@@ -195,7 +201,7 @@
     $("#form-tavola").hidden = !modifica && $("#form-tavola").hidden;
     const s = leggi(), l = lavoro(s, comuneCorrente);
     $("#avviso-tavole").innerHTML = l
-      ? `<div class="msg msg-info mb-3">Versione di lavoro: <strong>${esc(l.nomeFile)}</strong> verificata il ${esc(l.data)}.</div>`
+      ? `<div class="msg msg-info mb-3">Versione di lavoro: <strong>${esc(l.titolo || l.nomeFile)}</strong> (${esc(l.nomeFile)}) verificata il ${esc(l.data)}.</div>`
       : '<div class="msg msg-warn mb-3">Per questo Comune non c\'è ancora una versione di lavoro conforme: le tavole si possono impostare, i layer si collegano dopo una <a href="#/verifica">verifica</a> conforme.</div>';
     const ord = bozze(s, comuneCorrente).sort((a, b) => a.codice.localeCompare(b.codice, "it", { numeric: true }));
     $("#lista-tavole").innerHTML = ord.length ? ord.map((t) => cardTavola(t,

@@ -68,8 +68,18 @@
     dz.classList.add("scelto");
     pronto();
   }
+  // Comune: testo libero con suggerimenti, valido solo se e' un comune della Calabria (si normalizza la grafia)
+  const COMUNI = window.COMUNI_CALABRIA || [];
+  $("#lista-comuni").innerHTML = COMUNI.map((c) => `<option value="${esc(c)}">`).join("");
+  function comuneValido() {
+    const v = $("#comune").value.trim().toLowerCase();
+    return COMUNI.find((c) => c.toLowerCase() === v) || null;
+  }
+  $("#comune").addEventListener("input", pronto);
+  $("#comune").addEventListener("blur", () => { const c = comuneValido(); if (c) $("#comune").value = c; pronto(); });
   function pronto() {
-    const mancano = [!$("#titolo-fornitura").value.trim() && "titolo", !$("#comune").value && "Comune", !fileScelto && "archivio"].filter(Boolean);
+    const testo = $("#comune").value.trim();
+    const mancano = [!$("#titolo-fornitura").value.trim() && "titolo", !comuneValido() && (testo ? "un Comune della Calabria valido" : "Comune"), !fileScelto && "archivio"].filter(Boolean);
     $("#btn-carica").disabled = mancano.length > 0;
     $("#carica-help").textContent = mancano.length ? "Manca: " + mancano.join(", ") + "." : "";
   }
@@ -317,7 +327,7 @@
   function mostraReport(nomeFile, quadro, E, crs) {
     const nErr = conta(E, (e) => e.livello === "ERRORE"), nAv = E.length - nErr;
     const unico = crs.size === 1 && Object.values(CRS).find((c) => c.epsg === [...crs][0]);
-    ULTIMO = { titolo: $("#titolo-fornitura").value.trim(), nomeFile, quadro, E, nErr, nAv, comune: $("#comune").value, strumento: $("#strumento").value,
+    ULTIMO = { titolo: $("#titolo-fornitura").value.trim(), nomeFile, quadro, E, nErr, nAv, comune: comuneValido() || $("#comune").value.trim(), strumento: $("#strumento").value,
       data: new Date().toLocaleString("it-IT", { dateStyle: "short", timeStyle: "short" }),
       crsTxt: unico ? unico.nome : crs.size ? "non omogeneo" : "non rilevato",
       formato: /gdb/i.test(nomeFile) ? "gdb" : "shapefile", id: "PSC-" + Date.now().toString(36).toUpperCase() };
