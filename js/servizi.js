@@ -15,7 +15,7 @@
   const VISTE = {
     home: ["Pianificazione comunale – PSC/PSA", "Servizi per la redazione, la verifica e la consegna dei Piani Strutturali Comunali secondo il QTRP."],
     template: ["Template e regole", "Il template dei dati previsto dal QTRP (Tomo IV, Allegato 2) e le regole con cui vengono controllate le forniture."],
-    verifica: ["Verifica della fornitura", "Carica lo zip dei dati del piano e ricevi subito il report di controllo."],
+    verifica: ["Carica e verifica la fornitura", "Carica i dati del piano: vengono validati rispetto al template del QTRP e salvati con il report."],
     forniture: ["Le mie forniture", "Storico delle verifiche e versione di lavoro di ogni Comune."],
     tavole: ["Composizione delle tavole", "Le tavole del piano previste dal QTRP, collegate ai layer della versione di lavoro."],
     gestione: ["Visualizza, modifica e valida le tavole", "Le tavole salvate o inviate, sulla mappa e con il controllo di coerenza."],
@@ -60,6 +60,8 @@
       sel.value = tutti && prev === "" ? "" : comuneCorrente;
       sel.onchange = () => { if (sel.value) { comuneCorrente = sel.value; try { localStorage.setItem("psc_mockup_comune", comuneCorrente); } catch (e) { /* ignora */ } } vai(); };
     });
+    // carica e verifica: il Comune di appartenenza si sceglie esplicitamente, non e' un filtro
+    $("#comune").innerHTML = '<option value="">Seleziona il Comune</option>' + COMUNI.map((c) => `<option>${esc(c)}</option>`).join("");
   }
 
   // ---------------------------------------------------------------- navigazione
@@ -72,7 +74,7 @@
     $("#band-sottotitolo").textContent = VISTE[v][1];
     $("#barra-contesto").hidden = v === "home";
     document.title = `${VISTE[v][0]} – Geoportale Regione Calabria`;
-    if (v === "verifica") { if (arg) { const f = leggi().forniture.find((x) => x.id === arg); if (f) window.APP.apriReport(f); } else window.APP.nascondiReport(); }
+    if (v === "verifica") window.APP.nascondiReport();
     if (v === "forniture") forniture();
     if (v === "tavole") tavole();
     if (v === "gestione") gestione();
@@ -91,18 +93,20 @@
       return;
     }
     $("#lista-forniture").innerHTML = '<div class="table-responsive"><table class="table table-sm tab-report align-middle"><thead><tr><th>Data</th>' + (fc ? "" : "<th>Comune</th>") +
-      '<th>File</th><th>Formato</th><th>Sistema di riferimento</th><th>Esito</th><th class="num">Errori</th><th class="num">Avvisi</th><th></th></tr></thead><tbody>' +
+      '<th>Fornitura</th><th>Formato</th><th>Sistema di riferimento</th><th>Esito</th><th class="num">Errori</th><th class="num">Avvisi</th><th></th></tr></thead><tbody>' +
       elenco.map((f) => `<tr>
         <td>${esc(f.data)}</td>${fc ? "" : `<td>${esc(f.comune)}</td>`}
-        <td>${esc(f.nomeFile)}${s.lavoro[f.comune] === f.id ? ' <span class="pill pill-blu">versione di lavoro</span>' : ""}</td>
+        <td><strong>${esc(f.titolo || f.nomeFile)}</strong>${s.lavoro[f.comune] === f.id ? ' <span class="pill pill-blu">versione di lavoro</span>' : ""}
+          <div class="small text-muted">${esc(f.strumento || "")} · ${esc(f.nomeFile)}${f.nErr ? " · non utilizzabile per le tavole" : ""}</div></td>
         <td>${esc(f.formato || "")}</td><td>${esc(f.crsTxt)}</td>
         <td><span class="pill ${f.nErr ? "pill-err" : "pill-ok"}">${f.nErr ? "non conforme" : "conforme"}</span></td>
         <td class="num">${f.nErr}</td><td class="num">${f.nAv}</td>
         <td class="text-end text-nowrap">
-          <a class="btn btn-outline-primary btn-xs" href="#/verifica/${f.id}">Report</a>
+          <button class="btn btn-outline-primary btn-xs" data-pdf="${f.id}" type="button">Report PDF</button>
           ${!f.nErr && s.lavoro[f.comune] !== f.id ? `<button class="btn btn-outline-primary btn-xs" data-lavoro="${f.id}" type="button">Usa come versione di lavoro</button>` : ""}
           <button class="btn btn-link btn-xs text-danger" data-elimina="${f.id}" type="button">Elimina</button>
         </td></tr>`).join("") + "</tbody></table></div>";
+    document.querySelectorAll("[data-pdf]").forEach((b) => b.addEventListener("click", () => window.APP.reportPdf(leggi().forniture.find((x) => x.id === b.dataset.pdf))));
     document.querySelectorAll("[data-lavoro]").forEach((b) => b.addEventListener("click", () => {
       const s = leggi(), f = s.forniture.find((x) => x.id === b.dataset.lavoro); s.lavoro[f.comune] = f.id; scrivi(s); forniture();
     }));
@@ -341,7 +345,7 @@
   $("#btn-invia").addEventListener("click", () => {
     const s = leggi(), c = comuneCorrente, l = lavoro(s, c), b = bozze(s, c);
     const inv = { protocollo: "RC-PSC-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-6), data: ora(), comune: c,
-      strumento: $("#strumento").value, fornitura: l.nomeFile, controllo: l.id,
+      strumento: l.strumento, fornitura: `${l.titolo || ""} (${l.nomeFile})`, controllo: l.id,
       tavole: b.map((t) => ({ codice: t.codice, titolo: t.titolo, layer: t.layer, pdf: t.pdf })) };
     b.forEach((t) => Object.assign(t, { stato: "inviata", protocollo: inv.protocollo, inviata: inv.data }));
     s.invii.unshift(inv); scrivi(s); invio();

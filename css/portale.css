@@ -123,6 +123,14 @@ h4, .h4, h5, .h5 { font-size: 1.1rem; } h6, .h6 { font-size: 1rem; }
 .form-label-plain { font-weight: 600; font-size: .9rem; margin-bottom: .25rem; display: block; }
 .callout { max-width: none; }
 
+/* area di caricamento stretta e allungata */
+.dropzone-barra { display: flex; align-items: center; gap: .75rem; padding: .6rem .75rem .6rem 1rem; border: 2px dashed #99c2eb;
+  border-radius: .35rem; background: #f5f9fd; cursor: pointer; transition: background .15s, border-color .15s; }
+.dropzone-barra:hover, .dropzone-barra:focus, .dropzone-barra.drag { background: #e6f0fa; border-color: var(--blu); outline: none; }
+.dropzone-barra.scelto { border-style: solid; border-color: var(--blu); background: #fff; }
+.dropzone-barra .dz-ico { width: 28px; height: 28px; margin: 0; flex-shrink: 0; }
+.dropzone-barra .dz-testo { font-size: .9rem; color: #33475b; min-width: 0; overflow-wrap: anywhere; }
+
 /* dropzone */
 .dropzone { border: 2px dashed #99c2eb; border-radius: .5rem; padding: 2.5rem 1.5rem; text-align: center;
   background: #f5f9fd; transition: background .15s, border-color .15s; cursor: pointer; }

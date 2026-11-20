@@ -92,8 +92,8 @@
           <span class="s-btn">Apri <svg class="ico" viewBox="0 0 24 24"><path d="M5 11h11.2l-4.6-4.6L13 5l7 7-7 7-1.4-1.4 4.6-4.6H5z"/></svg></span></a>
         <a class="servizio" href="#/verifica">
           <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z"/></svg>
-          <span class="s-titolo">Verifica della fornitura</span>
-          <span class="s-desc">Carica lo zip dei dati quando vuoi, anche più volte durante la redazione, e ricevi il report di controllo.</span>
+          <span class="s-titolo">Carica e verifica la fornitura</span>
+          <span class="s-desc">Carica i dati del piano con titolo e Comune: la fornitura viene validata e salvata; se conforme, si usa per comporre le tavole.</span>
           <span class="s-btn">Apri <svg class="ico" viewBox="0 0 24 24"><path d="M5 11h11.2l-4.6-4.6L13 5l7 7-7 7-1.4-1.4 4.6-4.6H5z"/></svg></span></a>
         <a class="servizio" href="#/forniture">
           <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
@@ -204,28 +204,56 @@
     </section>
     </div>
 
-    <!-- ===================== VERIFICA ===================== -->
+    <!-- ===================== CARICA E VERIFICA ===================== -->
     <div class="vista" data-vista="verifica" hidden>
-    <section id="sez-upload" class="mb-5">
-      <p class="mb-3">La verifica non è un invio: si può ripetere quante volte serve durante la redazione del piano.
-        Ogni verifica resta nello storico di <a href="#/forniture">Le mie forniture</a>.</p>
-      <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
-        <label for="comune" class="small fw-semibold mb-0">Comune</label>
-        <select id="comune" class="form-select form-select-sm w-auto sel-comune"></select>
-        <label for="strumento" class="small fw-semibold mb-0 ms-2">Strumento</label>
-        <select id="strumento" class="form-select form-select-sm w-auto"><option>PSC</option><option>PSA</option><option>Variante PSC</option></select>
-      </div>
+      <p class="mb-4">Carica la fornitura dei dati del piano: viene verificata rispetto al template del QTRP e salvata in
+        <a href="#/forniture">Le mie forniture</a> con il suo report. Solo le forniture <strong>conformi</strong> si possono usare per comporre le tavole.</p>
       <div class="row g-4">
-        <div class="col-lg-7">
-          <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-describedby="dz-help">
-            <svg class="dz-ico" viewBox="0 0 24 24"><path d="M19.4 10a7.5 7.5 0 0 0-14.3-2A6 6 0 0 0 6 20h13a5 5 0 0 0 .4-10ZM13 13v4h-2v-4H8l4-4 4 4h-3Z"/></svg>
-            <p class="h5 mb-1">Trascina qui l'archivio .zip della fornitura</p>
-            <p id="dz-help" class="mb-3 text-muted">oppure</p>
-            <label class="btn btn-outline-primary mb-0">Seleziona file<input id="file" type="file" accept=".zip" hidden></label>
-            <p class="small text-muted mt-3 mb-0">Archivio zip con la cartella degli shapefile oppure con il File Geodatabase (.gdb)</p>
+        <div class="col-lg-8">
+          <div class="row g-3 mb-3">
+            <div class="col-12">
+              <label for="titolo-fornitura" class="form-label-plain">Titolo della fornitura</label>
+              <input id="titolo-fornitura" class="form-control form-control-sm" type="text" placeholder="es. PSC adottato – versione per la Conferenza di pianificazione">
+            </div>
+            <div class="col-md-5">
+              <label for="strumento" class="form-label-plain">Strumento</label>
+              <select id="strumento" class="form-select form-select-sm"><option>PSC</option><option>PSA</option><option>Variante PSC</option></select>
+            </div>
+            <div class="col-md-7">
+              <label for="comune" class="form-label-plain">Comune di appartenenza</label>
+              <select id="comune" class="form-select form-select-sm"></select>
+            </div>
           </div>
+          <span class="form-label-plain">Archivio .zip</span>
+          <div id="dropzone" class="dropzone-barra" tabindex="0" role="button" aria-label="Seleziona o trascina l'archivio zip della fornitura">
+            <svg class="dz-ico" viewBox="0 0 24 24"><path d="M19.4 10a7.5 7.5 0 0 0-14.3-2A6 6 0 0 0 6 20h13a5 5 0 0 0 .4-10ZM13 13v4h-2v-4H8l4-4 4 4h-3Z"/></svg>
+            <span id="dz-testo" class="dz-testo">Trascina qui lo zip con la cartella degli shapefile o con il File Geodatabase</span>
+            <label class="btn btn-outline-primary btn-sm mb-0 ms-auto">Scegli file<input id="file" type="file" accept=".zip" hidden></label>
+          </div>
+          <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
+            <button id="btn-carica" class="btn btn-primary" type="button" disabled>Carica e valida</button>
+            <span id="carica-help" class="small text-muted">Inserisci titolo, Comune e archivio.</span>
+          </div>
+
+          <div id="stato-elaborazione" class="mt-4" hidden>
+            <div class="progress progress-indeterminate"><div class="progress-bar" role="progressbar"></div></div>
+            <p id="stato-testo" class="small text-muted mt-2" aria-live="polite"></p>
+          </div>
+          <div id="avviso-gdb" class="alert alert-info mt-4" role="alert" hidden></div>
+
+          <section id="sez-report" class="mt-4" hidden>
+            <div id="esito" class="esito"></div>
+            <div id="esito-nota" class="mt-3"></div>
+            <div class="d-flex flex-wrap gap-2 mt-3">
+              <button id="btn-pdf" class="btn btn-primary btn-sm" type="button">
+                <svg class="ico ico-w" viewBox="0 0 24 24"><path d="M11 3h2v10l3.5-3.5 1.4 1.4L12 16.8l-5.9-5.9 1.4-1.4L11 13V3ZM4 19h16v2H4z"/></svg>
+                Scarica il report PDF</button>
+              <button id="btn-csv" class="btn btn-outline-primary btn-sm" type="button">Scarica l'elenco errori (CSV)</button>
+              <button id="btn-nuova" class="btn btn-outline-secondary btn-sm" type="button">Carica un'altra fornitura</button>
+            </div>
+          </section>
         </div>
-        <div class="col-lg-5">
+        <div class="col-lg-4">
           <div class="card card-bg shadow-sm"><div class="card-body p-4">
             <h3 class="h6">Cosa viene controllato</h3>
             <ul class="lista-controlli" id="lista-controlli">
@@ -238,7 +266,7 @@
               <li data-k="topologia" class="futuro">Controlli geometrici e topologici <span class="badge bg-light text-dark border">in sviluppo</span></li>
             </ul>
             <hr>
-            <p class="small mb-2"><strong>Forniture di esempio</strong> per provare il servizio:</p>
+            <p class="small mb-2"><strong>Forniture di esempio</strong>:</p>
             <ul class="small mb-0">
               <li><a href="demo/Lamezia_Terme_PSC_shp.zip" download>Lamezia Terme – PSC (shapefile, conforme)</a></li>
               <li><a href="demo/Comune_Prova_con_errori_shp.zip" download>Comune di prova (shapefile con errori)</a></li>
@@ -246,43 +274,6 @@
           </div></div>
         </div>
       </div>
-      <div id="stato-elaborazione" class="mt-4" hidden>
-        <div class="progress progress-indeterminate"><div class="progress-bar" role="progressbar"></div></div>
-        <p id="stato-testo" class="small text-muted mt-2" aria-live="polite"></p>
-      </div>
-      <div id="avviso-gdb" class="alert alert-info mt-4" role="alert" hidden></div>
-    </section>
-
-    <!-- ===================== 3. REPORT ===================== -->
-    <section id="sez-report" class="mb-5" hidden>
-      <h2 class="h4 mb-3">Esito del controllo</h2>
-      <div id="esito" class="esito"></div>
-      <div class="d-flex flex-wrap gap-2 my-4">
-        <button id="btn-pdf" class="btn btn-primary" type="button">
-          <svg class="ico ico-w" viewBox="0 0 24 24"><path d="M11 3h2v10l3.5-3.5 1.4 1.4L12 16.8l-5.9-5.9 1.4-1.4L11 13V3ZM4 19h16v2H4z"/></svg>
-          Scarica il report PDF</button>
-        <button id="btn-csv" class="btn btn-outline-primary" type="button">Scarica l'elenco errori (CSV)</button>
-        <button id="btn-nuova" class="btn btn-outline-secondary" type="button">Nuova verifica</button>
-      </div>
-      <h3 class="h5">1. Quadro della consegna</h3>
-      <div id="tab-quadro" class="table-responsive mb-4"></div>
-      <h3 class="h5">2. Sintesi per controllo</h3>
-      <div id="tab-sintesi" class="table-responsive mb-4"></div>
-      <h3 class="h5">3. Elenco analitico</h3>
-      <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
-        <label for="filtro-layer" class="small mb-0">Layer</label>
-        <select id="filtro-layer" class="form-select form-select-sm w-auto"></select>
-        <label for="filtro-livello" class="small mb-0 ms-2">Livello</label>
-        <select id="filtro-livello" class="form-select form-select-sm w-auto">
-          <option value="">tutti</option><option>ERRORE</option><option>AVVISO</option></select>
-      </div>
-      <div id="tab-analitico" class="table-responsive mb-4"></div>
-      <h3 class="h5">4. Controlli geometrici e topologici</h3>
-      <div class="callout warning"><div class="callout-title">In sviluppo</div>
-        <p class="mb-0">Nelle prossime versioni: qualità delle geometrie (autointersezioni, sliver, vertici duplicati),
-          sovrapposizioni nei layer, copertura completa del territorio comunale per i layer di zonizzazione
-          rispetto al limite ISTAT (tolleranza 20 m).</p></div>
-    </section>
     </div>
 
     <!-- ===================== LE MIE FORNITURE ===================== -->

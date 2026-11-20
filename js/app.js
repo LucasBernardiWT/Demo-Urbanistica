@@ -58,20 +58,33 @@
   dz.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("#file").click(); } });
   ["dragenter", "dragover"].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.add("drag"); }));
   ["dragleave", "drop"].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.remove("drag"); }));
-  dz.addEventListener("drop", (e) => { if (e.dataTransfer.files[0]) avvia(e.dataTransfer.files[0]); });
-  $("#file").addEventListener("change", (e) => { if (e.target.files[0]) avvia(e.target.files[0]); e.target.value = ""; });
-  $("#btn-nuova").addEventListener("click", () => {
-    $("#sez-report").hidden = true; passo(2); resetLista();
-    $("#sez-upload").scrollIntoView({ behavior: "smooth" });
-  });
-
-  function passo(n) {
-    document.querySelectorAll(".step").forEach((s) => {
-      const k = +s.dataset.step;
-      s.classList.toggle("active", k === n);
-      s.classList.toggle("done", k < n);
-    });
+  // il file scelto resta in attesa: il controllo parte da "Carica e valida"
+  let fileScelto = null;
+  function scegli(f) {
+    if (!f) return;
+    if (!/\.zip$/i.test(f.name)) { alert("Carica un archivio .zip"); return; }
+    fileScelto = f;
+    $("#dz-testo").innerHTML = `<strong>${esc(f.name)}</strong> <span class="text-muted">(${(f.size / 1e6).toFixed(1)} MB)</span>`;
+    dz.classList.add("scelto");
+    pronto();
   }
+  function pronto() {
+    const mancano = [!$("#titolo-fornitura").value.trim() && "titolo", !$("#comune").value && "Comune", !fileScelto && "archivio"].filter(Boolean);
+    $("#btn-carica").disabled = mancano.length > 0;
+    $("#carica-help").textContent = mancano.length ? "Manca: " + mancano.join(", ") + "." : "";
+  }
+  dz.addEventListener("drop", (e) => scegli(e.dataTransfer.files[0]));
+  $("#file").addEventListener("change", (e) => { scegli(e.target.files[0]); e.target.value = ""; });
+  $("#titolo-fornitura").addEventListener("input", pronto);
+  $("#comune").addEventListener("change", pronto);
+  $("#btn-carica").addEventListener("click", () => { $("#btn-carica").disabled = true; avvia(fileScelto).finally(pronto); });
+  function nuovaFornitura() {
+    fileScelto = null; $("#titolo-fornitura").value = ""; dz.classList.remove("scelto");
+    $("#dz-testo").textContent = "Trascina qui lo zip con la cartella degli shapefile o con il File Geodatabase";
+    $("#sez-report").hidden = true; $("#avviso-gdb").hidden = true; resetLista(); pronto();
+  }
+  $("#btn-nuova").addEventListener("click", nuovaFornitura);
+  function passo() { /* nessun indicatore di passi in questa versione */ }
   function resetLista() { document.querySelectorAll("#lista-controlli li").forEach((li) => li.classList.remove("run", "ok", "ko", "warn")); }
   function statoControllo(k, s) { const li = document.querySelector(`#lista-controlli li[data-k=${k}]`); li.classList.remove("run", "ok", "ko", "warn"); if (s) li.classList.add(s); }
   const pausa = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -300,53 +313,34 @@
   let ULTIMO = null;
   const conta = (E, f) => E.filter(f).length;
 
-  // salvato: fornitura già registrata (riapertura dallo storico); altrimenti nuova verifica da registrare
-  function mostraReport(nomeFile, quadro, E, crs, salvato) {
-    if (salvato) ULTIMO = salvato;
-    else {
-      const nErr = conta(E, (e) => e.livello === "ERRORE");
-      const unico = crs.size === 1 && Object.values(CRS).find((c) => c.epsg === [...crs][0]);
-      ULTIMO = { nomeFile, quadro, E, nErr, nAv: E.length - nErr, comune: $("#comune").value, strumento: $("#strumento").value,
-        data: new Date().toLocaleString("it-IT", { dateStyle: "short", timeStyle: "short" }),
-        crsTxt: unico ? unico.nome : crs.size ? "non omogeneo" : "non rilevato",
-        formato: /gdb/i.test(nomeFile) ? "gdb" : "shapefile", id: "PSC-" + Date.now().toString(36).toUpperCase() };
-      if (window.SERVIZI) window.SERVIZI.registraFornitura(ULTIMO);
-    }
-    const { nErr, nAv, comune, strumento, data, crsTxt } = ULTIMO;
-    E = ULTIMO.E; quadro = ULTIMO.quadro; nomeFile = ULTIMO.nomeFile;
+  // nuova verifica: registra la fornitura (conforme o no) e mostra solo l'esito; il dettaglio e' nel PDF
+  function mostraReport(nomeFile, quadro, E, crs) {
+    const nErr = conta(E, (e) => e.livello === "ERRORE"), nAv = E.length - nErr;
+    const unico = crs.size === 1 && Object.values(CRS).find((c) => c.epsg === [...crs][0]);
+    ULTIMO = { titolo: $("#titolo-fornitura").value.trim(), nomeFile, quadro, E, nErr, nAv, comune: $("#comune").value, strumento: $("#strumento").value,
+      data: new Date().toLocaleString("it-IT", { dateStyle: "short", timeStyle: "short" }),
+      crsTxt: unico ? unico.nome : crs.size ? "non omogeneo" : "non rilevato",
+      formato: /gdb/i.test(nomeFile) ? "gdb" : "shapefile", id: "PSC-" + Date.now().toString(36).toUpperCase() };
+    if (window.SERVIZI) window.SERVIZI.registraFornitura(ULTIMO);
 
+    const presenti = Object.values(quadro).filter((x) => x.stato === "presente").length;
+    const prime = sintesi(E).filter((r) => r[0] === "ERRORE").slice(0, 3).map((r) => `${r[1]} (${r[2]}: ${r[3]})`);
     $("#esito").className = "esito " + (nErr ? "ko" : "ok");
-    $("#esito").innerHTML = `<svg class="ico" style="width:2.5rem;height:2.5rem" viewBox="0 0 24 24"><path d="${nErr
+    $("#esito").innerHTML = `<svg class="ico" style="width:2.5rem;height:2.5rem;flex-shrink:0" viewBox="0 0 24 24"><path d="${nErr
       ? "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 15h-2v-2h2v2Zm0-4h-2V7h2v6Z"
       : "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-2 15-5-5 1.4-1.4 3.6 3.6 7.6-7.6L19 8l-9 9Z"}"/></svg>
       <div><div class="esito-titolo">${nErr ? "Fornitura NON CONFORME" : "Fornitura CONFORME"}</div>
-      <div class="esito-meta">${esc(comune)} – ${esc(strumento)} · ${esc(nomeFile)} · ${esc(crsTxt)} · ${nErr} errori, ${nAv} avvisi · controllo n. ${ULTIMO.id} del ${data}</div></div>`;
-
-    let q = '<table class="table table-sm tab-report"><thead><tr><th>Layer</th><th>Stato</th><th>Sistema di riferimento</th><th>Geometria</th><th class="num">Record</th><th class="num">Errori</th><th class="num">Avvisi</th></tr></thead><tbody>';
-    for (const [l, x] of Object.entries(quadro)) {
-      const ne = conta(E, (e) => e.layer === l && e.livello === "ERRORE"), na = conta(E, (e) => e.layer === l && e.livello === "AVVISO");
-      const pill = x.stato === "presente" ? "pill-ok" : x.extra ? "pill-av" : "pill-err";
-      q += `<tr class="${ne ? "errore" : ""}"><td>${esc(l)}</td><td><span class="pill ${pill}">${esc(x.stato)}</span></td><td>${esc(x.crs)}</td><td>${esc(x.geom)}</td><td class="num">${x.record}</td><td class="num">${ne}</td><td class="num">${na}</td></tr>`;
-    }
-    $("#tab-quadro").innerHTML = q + "</tbody></table>";
-
-    const s = sintesi(E);
-    $("#tab-sintesi").innerHTML = s.length
-      ? '<table class="table table-sm tab-report"><thead><tr><th>Livello</th><th>Controllo</th><th>Layer</th><th class="num">Occorrenze</th></tr></thead><tbody>' +
-        s.map((r) => `<tr class="${r[0] === "ERRORE" ? "errore" : "avviso"}"><td>${r[0]}</td><td>${esc(r[1])}</td><td>${esc(r[2])}</td><td class="num">${r[3]}</td></tr>`).join("") + "</tbody></table>"
-      : '<p class="text-success">Nessun errore né avviso.</p>';
-
-    const layers = [...new Set(E.map((e) => e.layer))].sort();
-    $("#filtro-layer").innerHTML = '<option value="">tutti</option>' + layers.map((l) => `<option>${esc(l)}</option>`).join("");
-    $("#filtro-livello").value = "";
-    analitico();
+      <div class="esito-meta">${esc(ULTIMO.titolo)} · ${esc(ULTIMO.comune)} – ${esc(ULTIMO.strumento)} · ${presenti} layer su ${R.layer.length} · ${esc(ULTIMO.crsTxt)} · ${nErr} errori, ${nAv} avvisi</div></div>`;
+    $("#esito-nota").innerHTML = nErr
+      ? `<div class="msg msg-warn">La fornitura è salvata in <a href="#/forniture">Le mie forniture</a>, ma <strong>non è utilizzabile per la composizione delle tavole</strong> finché non è conforme.
+         Correggi gli errori indicati nel report e ricaricala.${prime.length ? `<div class="small mt-1">Principali errori: ${prime.map(esc).join("; ")}.</div>` : ""}</div>`
+      : `<div class="msg msg-info">La fornitura è salvata in <a href="#/forniture">Le mie forniture</a> ed è utilizzabile per la <a href="#/tavole">composizione delle tavole</a>.</div>`;
     $("#sez-report").hidden = false;
-    $("#sez-report").scrollIntoView({ behavior: "smooth" });
+    $("#sez-report").scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
-  // riapre il report di una fornitura dello storico nella vista Verifica
   window.APP = {
-    apriReport(f) { resetLista(); $("#avviso-gdb").hidden = true; mostraReport(null, null, null, null, f); },
-    nascondiReport() { $("#sez-report").hidden = true; resetLista(); },
+    reportPdf(f) { creaPdf(f); },
+    nascondiReport() { $("#sez-report").hidden = true; $("#avviso-gdb").hidden = true; resetLista(); },
   };
 
   function sintesi(E) {
@@ -356,19 +350,6 @@
   }
   function ordinati(E) { return [...E].sort((a, b) => a.layer.localeCompare(b.layer) || (a.livello !== b.livello ? (a.livello === "ERRORE" ? -1 : 1) : 0) || a.controllo.localeCompare(b.controllo) || (+a.oid || 0) - (+b.oid || 0)); }
 
-  function analitico() {
-    if (!ULTIMO) return;
-    const fl = $("#filtro-layer").value, fv = $("#filtro-livello").value;
-    const righe = ordinati(ULTIMO.E).filter((e) => (!fl || e.layer === fl) && (!fv || e.livello === fv));
-    if (!righe.length) { $("#tab-analitico").innerHTML = '<p class="text-success">Nessuna segnalazione.</p>'; return; }
-    const vis = righe.slice(0, MAX_RIGHE_VIDEO);
-    $("#tab-analitico").innerHTML = '<table class="table table-sm tab-report"><thead><tr><th>Layer</th><th>OID</th><th>Campo</th><th>Livello</th><th>Controllo</th><th>Valore</th><th>Dettaglio</th></tr></thead><tbody>' +
-      vis.map((e) => `<tr class="${e.livello === "ERRORE" ? "errore" : "avviso"}"><td>${esc(e.layer)}</td><td>${esc(e.oid)}</td><td>${esc(e.campo)}</td><td>${e.livello}</td><td>${esc(e.controllo)}</td><td>${esc(e.valore)}</td><td>${esc(e.dettaglio)}</td></tr>`).join("") +
-      "</tbody></table>" + (righe.length > vis.length ? `<p class="small text-muted">Mostrate ${vis.length} di ${righe.length} segnalazioni: l'elenco completo è nel PDF e nel CSV.</p>` : "");
-  }
-  $("#filtro-layer").addEventListener("change", analitico);
-  $("#filtro-livello").addEventListener("change", analitico);
-
   $("#btn-csv").addEventListener("click", () => {
     const rows = [["layer", "oid", "campo", "livello", "controllo", "valore", "dettaglio"]].concat(ordinati(ULTIMO.E).map((e) => [e.layer, e.oid, e.campo, e.livello, e.controllo, e.valore, e.dettaglio]));
     const csv = "﻿" + rows.map((r) => r.map((x) => `"${String(x).replace(/"/g, '""')}"`).join(";")).join("\r\n");
@@ -377,8 +358,9 @@
   function scarica(blob, nome) { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nome; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); }
 
   // PDF sul modello dei report di Regione Lombardia: quadro della consegna, sintesi, analitico
-  $("#btn-pdf").addEventListener("click", () => {
-    const u = ULTIMO, { jsPDF } = window.jspdf;
+  $("#btn-pdf").addEventListener("click", () => creaPdf(ULTIMO));
+  function creaPdf(u) {
+    const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: "mm", format: "a4" });
     const BLU = [0, 102, 204], ROSSO = [192, 0, 0], VERDE = [46, 125, 50], AV = [178, 106, 0];
     doc.setFillColor(...BLU); doc.rect(0, 0, 210, 24, "F");
@@ -389,7 +371,7 @@
     doc.setTextColor(0, 38, 77); doc.setFont("helvetica", "bold"); doc.setFontSize(15);
     doc.text("Report di controllo della fornitura", 14, 36);
     doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(40);
-    const meta = [["Comune", u.comune], ["Strumento", u.strumento], ["File", u.nomeFile], ["Sistema di riferimento", u.crsTxt],
+    const meta = [["Titolo", u.titolo || "–"], ["Comune", u.comune], ["Strumento", u.strumento], ["File", u.nomeFile], ["Sistema di riferimento", u.crsTxt],
       ["Template di riferimento", R.origine], ["Controllo n.", u.id], ["Data", u.data]];
     let y = 43;
     for (const [k, v] of meta) { doc.setFont("helvetica", "bold"); doc.text(k + ":", 14, y); doc.setFont("helvetica", "normal"); doc.text(String(v), 58, y); y += 5; }
@@ -430,5 +412,5 @@
       doc.text(`Pagina ${i} di ${n}`, 196, 290, { align: "right" });
     }
     doc.save(`report_controllo_${u.id}.pdf`);
-  });
+  }
 })();
