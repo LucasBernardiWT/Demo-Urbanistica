@@ -357,6 +357,9 @@
       statoControllo("topologia", rep.errori ? "ko" : rep.avvisi ? "warn" : "ok");
       mostraTopologia(topo);
       if (window.SERVIZI) window.SERVIZI.aggiornaFornitura(id, { topologia: topo });
+      if (!ULTIMO.nErr) $("#esito-nota").innerHTML = rep.errori
+        ? `<div class="msg msg-warn">Gli errori topologici sono bloccanti: la fornitura è salvata ma <strong>non è utilizzabile per la composizione delle tavole</strong>. Correggi gli errori indicati nel pacchetto e ricaricala.</div>`
+        : `<div class="msg msg-info">Attributi e topologia conformi: la fornitura è utilizzabile per la <a href="#/tavole">composizione delle tavole</a>.</div>`;
     } catch (e) {
       statoControllo("topologia", "ko");
       box.innerHTML = `<div class="msg msg-warn"><strong>Controllo topologico non eseguito.</strong> Risposta del servizio: ${esc(e.message)}</div>`;
@@ -410,7 +413,9 @@
     $("#esito-nota").innerHTML = nErr
       ? `<div class="msg msg-warn">La fornitura è salvata in <a href="#/forniture">Le mie forniture</a>, ma <strong>non è utilizzabile per la composizione delle tavole</strong> finché non è conforme.
          Correggi gli errori indicati nel report e ricaricala.${prime.length ? `<div class="small mt-1">Principali errori: ${prime.map(esc).join("; ")}.</div>` : ""}</div>`
-      : `<div class="msg msg-info">La fornitura è salvata in <a href="#/forniture">Le mie forniture</a> ed è utilizzabile per la <a href="#/tavole">composizione delle tavole</a>.</div>`;
+      : CFG.topoUrl
+        ? `<div class="msg msg-info">Attributi conformi. La fornitura è salvata in <a href="#/forniture">Le mie forniture</a> e diventa utilizzabile per la composizione delle tavole <strong>se anche il controllo topologico è conforme</strong>.</div>`
+        : `<div class="msg msg-info">La fornitura è salvata in <a href="#/forniture">Le mie forniture</a> ed è utilizzabile per la <a href="#/tavole">composizione delle tavole</a>. Il controllo topologico, bloccante, non è ancora collegato a questo mockup.</div>`;
     $("#sez-report").hidden = false;
     $("#sez-report").scrollIntoView({ behavior: "smooth", block: "nearest" });
   }

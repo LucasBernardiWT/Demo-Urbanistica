@@ -29,6 +29,16 @@
   function leggi() { try { return JSON.parse(localStorage.getItem("psc_mockup_v2")) || VUOTO(); } catch (e) { return VUOTO(); } }
   function scrivi(s) { try { localStorage.setItem("psc_mockup_v2", JSON.stringify(s)); } catch (e) { /* storage pieno o bloccato */ } }
   const lavoro = (s, c) => s.forniture.find((f) => f.id === s.lavoro[c]) || null;
+  // Una fornitura e' utilizzabile per tavole e invio se e' conforme negli attributi e nella topologia (errori
+  // topologici bloccanti). Se il servizio topologico non e' collegato (topoUrl vuoto) il requisito e' sospeso.
+  const topologiaRichiesta = () => !!(window.CONFIG_MOCKUP || {}).topoUrl;
+  function statoUso(f) {
+    if (f.nErr) return { ok: false, motivo: "attributi non conformi" };
+    if (!topologiaRichiesta()) return { ok: true, motivo: f.topologia ? "" : "topologia non verificata (servizio non collegato)" };
+    if (!f.topologia) return { ok: false, motivo: "in attesa del controllo topologico" };
+    if (f.topologia.errori) return { ok: false, motivo: "errori topologici" };
+    return { ok: true, motivo: "" };
+  }
   let comuneCorrente = "";
   try { comuneCorrente = localStorage.getItem("psc_mockup_comune") || ""; } catch (e) { /* default */ }
 
@@ -64,12 +74,16 @@
   window.SERVIZI = {
     aggiornaFornitura(id, dati) {
       const s = leggi(), f = s.forniture.find((x) => x.id === id);
-      if (f) { Object.assign(f, dati); scrivi(s); }
+      if (!f) return;
+      Object.assign(f, dati);
+      if (statoUso(f).ok && !s.lavoro[f.comune]) impostaLavoro(s, f.comune, f.id); // diventa utilizzabile dopo la topologia
+      scrivi(s);
     },
+    statoUso: (f) => statoUso(f),
     registraFornitura(f) {
       const s = leggi();
       s.forniture.unshift({ ...f, E: f.E.slice(0, MAX_SEGNALAZIONI), troncato: f.E.length > MAX_SEGNALAZIONI });
-      if (!f.nErr && !s.lavoro[f.comune]) impostaLavoro(s, f.comune, f.id); // la prima conforme diventa versione di lavoro
+      if (statoUso(f).ok && !s.lavoro[f.comune]) impostaLavoro(s, f.comune, f.id); // la prima utilizzabile diventa versione di lavoro
       scrivi(s);
       if (window.__ultimoFile && f.formato === "shapefile") zipSalva(f.id, window.__ultimoFile);
     },
@@ -122,7 +136,7 @@
       elenco.map((f) => `<tr>
         <td>${esc(f.data)}</td>${fc ? "" : `<td>${esc(f.comune)}</td>`}
         <td><strong>${esc(f.titolo || f.nomeFile)}</strong>${s.lavoro[f.comune] === f.id ? ' <span class="pill pill-blu">versione di lavoro</span>' : ""}
-          <div class="small text-muted">${esc(f.strumento || "")} · ${esc(f.nomeFile)}${f.nErr ? " · non utilizzabile per le tavole" : ""}</div></td>
+          <div class="small text-muted">${esc(f.strumento || "")} · ${esc(f.nomeFile)}${statoUso(f).motivo ? ` · <span class="${statoUso(f).ok ? "" : "text-danger"}">${statoUso(f).ok ? "" : "non utilizzabile per le tavole: "}${esc(statoUso(f).motivo)}</span>` : ""}</div></td>
         <td>${esc(f.formato || "")}</td><td>${esc(f.crsTxt)}</td>
         <td><span class="pill ${f.nErr ? "pill-err" : "pill-ok"}">${f.nErr ? "non conforme" : "conforme"}</span></td>
         <td class="num">${f.nErr}</td><td class="num">${f.nAv}</td>
@@ -131,7 +145,7 @@
           : '<span class="small text-muted">non eseguita</span>'}</td>
         <td class="text-end text-nowrap">
           <button class="btn btn-outline-primary btn-xs" data-pdf="${f.id}" type="button">Report PDF</button>
-          ${!f.nErr && s.lavoro[f.comune] !== f.id ? `<button class="btn btn-outline-primary btn-xs" data-lavoro="${f.id}" type="button">Usa come versione di lavoro</button>` : ""}
+          ${statoUso(f).ok && s.lavoro[f.comune] !== f.id ? `<button class="btn btn-outline-primary btn-xs" data-lavoro="${f.id}" type="button">Usa come versione di lavoro</button>` : ""}
           <button class="btn btn-link btn-xs text-danger" data-elimina="${f.id}" type="button">Elimina</button>
         </td></tr>`).join("") + "</tbody></table></div>";
     document.querySelectorAll("[data-pdf]").forEach((b) => b.addEventListener("click", () => window.APP.reportPdf(leggi().forniture.find((x) => x.id === b.dataset.pdf))));
@@ -294,7 +308,9 @@
     r.push(mancanti.length ? ["warn", "Layer previsti dal QTRP non inclusi", mancanti.join(", ")] : ["ok", "Layer previsti dal QTRP inclusi", q.layer.join(", ") || "nessuno previsto"]);
     if (!f) r.push(t.layer.length ? ["err", "Fornitura di riferimento non disponibile", "verifica di nuovo i dati"] : ["ok", "Nessun layer da collegare", ""]);
     else {
-      r.push(f.nErr ? ["err", "Fornitura di riferimento non conforme", f.nomeFile] : ["ok", "Fornitura di riferimento conforme", `${f.nomeFile} (${f.data})`]);
+      const uso = statoUso(f);
+      r.push(!uso.ok ? ["err", "Fornitura di riferimento non conforme", `${f.nomeFile}: ${uso.motivo}`] : ["ok", "Fornitura di riferimento conforme", `${f.nomeFile} (${f.data})`]);
+      if (uso.ok && uso.motivo) r.push(["warn", "Topologia non verificata", "servizio topologico non collegato"]);
       const assenti = t.layer.filter((n) => !f.quadro[n] || f.quadro[n].stato !== "presente");
       r.push(assenti.length ? ["err", "Layer assenti nella fornitura", assenti.join(", ")] : ["ok", "Layer presenti nella fornitura", ""]);
       const vuoti = t.layer.filter((n) => f.quadro[n] && f.quadro[n].record === 0);
@@ -389,7 +405,7 @@
     const nonValide = b.filter((t) => validaTavola(t, s).some((r) => r[0] === "err")).map((t) => t.codice);
     const fuori = LAYER.filter((n) => !usati.has(n));
     return [
-      [!!l, "Versione di lavoro conforme", l ? `${l.nomeFile} (${l.data})` : "nessuna fornitura conforme selezionata"],
+      [!!l && statoUso(l).ok, "Versione di lavoro conforme (attributi e topologia)", l ? `${l.nomeFile} (${l.data})${statoUso(l).motivo ? " – " + statoUso(l).motivo : ""}` : "nessuna fornitura conforme selezionata"],
       [b.length > 0, "Tavole in bozza da inviare", `${b.length} tavole`],
       [!fuori.length, "Ogni layer compare in almeno una tavola", fuori.length ? "mancano: " + fuori.join(", ") : "tutti gli 11 layer"],
       [b.length > 0 && !senzaPdf.length, "PDF caricato per ogni tavola", senzaPdf.length ? "mancano: " + senzaPdf.join(", ") : ""],
