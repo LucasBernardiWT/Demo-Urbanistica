@@ -288,7 +288,7 @@
       statoControllo("dipendenze", E.some((e) => /dipendente/.test(e.controllo)) ? "ko" : "ok");
       $("#stato-elaborazione").hidden = true;
       mostraReport(file.name, quadro, E, crsTrovati);
-      await avviaTopologia(file);
+      await avviaTopologia(file, { zip, shp, dati });
     } catch (e) {
       $("#stato-elaborazione").hidden = true;
       if (e.servizio || /fetch/i.test(e.message)) {
@@ -306,7 +306,9 @@
   // Web tool ValidazionePSC.pyt pubblicato su ArcGIS Enterprise: upload dello zip, submitJob, attesa, lettura di report.json.
   const CFG = window.CONFIG_MOCKUP || {};
   async function gp(url, body) {
-    const u = url + (url.includes("?") ? "&" : "?") + "f=json" + (CFG.token ? "&token=" + encodeURIComponent(CFG.token) : "");
+    // nelle POST multipart ArcGIS Server legge f e token solo dal corpo del form, non dall'indirizzo
+    if (body) { body.append("f", "json"); if (CFG.token) body.append("token", CFG.token); }
+    const u = body ? url : url + (url.includes("?") ? "&" : "?") + "f=json" + (CFG.token ? "&token=" + encodeURIComponent(CFG.token) : "");
     const r = await fetch(u, body ? { method: "POST", body } : {});
     const j = await r.json();
     if (j.error) { const e = new Error(j.error.message || "errore del servizio"); e.servizio = true; throw e; }
@@ -335,43 +337,71 @@
   async function controllaSulServer(file) {
     ["completezza", "crs", "struttura", "valori", "dipendenze"].forEach((k) => statoControllo(k, "run"));
     stato("Invio della fornitura al servizio di validazione regionale…");
-    const r = await eseguiJob(CFG.gpUrl, file, { nome_fornitura: file.name }, ["report_json", "report_pdf"],
+    // uscite testuali: la cartella dei job non e' raggiungibile da geohub-coll
+    const r = await eseguiJob(CFG.gpUrl, file, { nome_fornitura: file.name }, ["report_json_testo", "report_pdf_b64"],
       (s) => stato(`Controllo in corso sul server (${s})…`));
-    mostraDaServer(await (await fetch(r.report_json)).json(), file.name, r.report_pdf);
+    mostraDaServer(JSON.parse(r.report_json_testo), file.name, null);
   }
+  const daBase64 = (s, tipo) => new Blob([Uint8Array.from(atob(s), (c) => c.charCodeAt(0))], { type: tipo });
 
-  // controllo topologico sul web tool ValidazioneTopologiaPSC.pyt: esito separato, report PDF e pacchetto errori
-  async function avviaTopologia(file) {
-    const box = $("#esito-topologia"), id = ULTIMO && ULTIMO.id;
-    if (!CFG.topoUrl) {
-      box.innerHTML = '<div class="msg msg-info"><strong>Controllo topologico:</strong> servizio non ancora collegato a questo mockup.</div>';
-      return;
-    }
-    statoControllo("topologia", "run");
-    box.innerHTML = `<div class="msg msg-info"><strong>Controllo topologico in corso sul server…</strong> <span id="topo-stato"></span><div class="small">Può richiedere alcuni minuti: l'esito degli attributi è già salvato.</div></div>`;
+  // il calcolo gira in un Web Worker: la pagina resta reattiva e mostra l'avanzamento
+  async function topologiaInWorker(file, shp, dati, comune, fase) {
+    const w = new Worker("js/topologia_worker.js?v=20261121l"), buf = await file.arrayBuffer();
     try {
-      const r = await eseguiJob(CFG.topoUrl, file, { nome_fornitura: file.name, comune: ULTIMO.comune, formato_errori: $("#formato-errori").value },
-        ["report_json", "report_pdf", "errori_zip"], (s) => { const x = $("#topo-stato"); if (x) x.textContent = `(${s})`; });
-      const rep = await (await fetch(r.report_json)).json();
-      const topo = { esito: rep.esito, errori: rep.errori, avvisi: rep.avvisi, pdf: r.report_pdf, zip: r.errori_zip, formato: $("#formato-errori").value };
-      statoControllo("topologia", rep.errori ? "ko" : rep.avvisi ? "warn" : "ok");
-      mostraTopologia(topo);
-      if (window.SERVIZI) window.SERVIZI.aggiornaFornitura(id, { topologia: topo });
-      if (!ULTIMO.nErr) $("#esito-nota").innerHTML = rep.errori
-        ? `<div class="msg msg-warn">Gli errori topologici sono bloccanti: la fornitura è salvata ma <strong>non è utilizzabile per la composizione delle tavole</strong>. Correggi gli errori indicati nel pacchetto e ricaricala.</div>`
-        : `<div class="msg msg-info">Attributi e topologia conformi: la fornitura è utilizzabile per la <a href="#/tavole">composizione delle tavole</a>.</div>`;
+      return await new Promise((ok, ko) => {
+        w.onmessage = (e) => { const m = e.data; if (m.fase) fase(m.fase); else if (m.fine) ok(m); else if (m.errore) ko(new Error(m.errore)); };
+        w.onerror = (e) => ko(new Error(e.message || "errore nel calcolo"));
+        w.postMessage({ buf, shp, dati, comune }, [buf]);
+      });
+    } finally { w.terminate(); }
+  }
+  // Controllo topologico: nel browser per gli shapefile (js/topologia.js), sul web tool regionale per i gdb.
+  // Esito separato; report PDF e pacchetto errori conservati nel browser con la fornitura.
+  async function avviaTopologia(file, ctx) {
+    const box = $("#esito-topologia"), u = ULTIMO, id = u && u.id;
+    const fase = (s) => { const x = $("#topo-stato"); if (x) x.textContent = s; };
+    let rep, pdf, zip, formato;
+    statoControllo("topologia", "run");
+    try {
+      if (ctx && window.TOPOLOGIA) {
+        box.innerHTML = '<div class="msg msg-info"><strong>Controllo topologico in corso…</strong> <span id="topo-stato"></span></div>';
+        ({ rep, zip } = await topologiaInWorker(file, ctx.shp, ctx.dati, u.comune, fase));
+        pdf = window.TOPOLOGIA.pdf(rep, u); formato = "shp";
+      } else if (CFG.topoUrl) {
+        formato = $("#formato-errori").value;
+        box.innerHTML = `<div class="msg msg-info"><strong>Controllo topologico in corso sul server…</strong> <span id="topo-stato"></span><div class="small">Può richiedere alcuni minuti: l'esito degli attributi è già salvato.</div></div>`;
+        const r = await eseguiJob(CFG.topoUrl, file, { nome_fornitura: file.name, comune: u.comune, formato_errori: formato },
+          ["report_json_testo", "report_pdf_b64", "errori_zip_b64"], (s) => fase(`(${s})`));
+        rep = JSON.parse(r.report_json_testo);
+        pdf = daBase64(r.report_pdf_b64, "application/pdf"); zip = daBase64(r.errori_zip_b64, "application/zip");
+      } else {
+        statoControllo("topologia", "warn");
+        box.innerHTML = '<div class="msg msg-info"><strong>Controllo topologico non eseguito:</strong> per i File Geodatabase serve il servizio regionale, non collegato a questo mockup.</div>';
+        return;
+      }
     } catch (e) {
       statoControllo("topologia", "ko");
-      box.innerHTML = `<div class="msg msg-warn"><strong>Controllo topologico non eseguito.</strong> Risposta del servizio: ${esc(e.message)}</div>`;
+      box.innerHTML = `<div class="msg msg-warn"><strong>Controllo topologico non eseguito.</strong> ${esc(e.message || e)}</div>`;
+      return;
     }
+    const topo = { esito: rep.esito, errori: rep.errori, avvisi: rep.avvisi, formato };
+    statoControllo("topologia", rep.errori ? "ko" : rep.avvisi ? "warn" : "ok");
+    if (window.SERVIZI) {
+      await window.SERVIZI.salvaFile(id + ":topo_pdf", pdf); await window.SERVIZI.salvaFile(id + ":topo_zip", zip);
+      window.SERVIZI.aggiornaFornitura(id, { topologia: topo });
+    }
+    mostraTopologia(topo, URL.createObjectURL(pdf), URL.createObjectURL(zip), id);
+    if (!u.nErr) $("#esito-nota").innerHTML = rep.errori
+      ? `<div class="msg msg-warn">Gli errori topologici sono bloccanti: la fornitura è salvata ma <strong>non è utilizzabile per la composizione delle tavole</strong>. Correggi gli errori indicati nel pacchetto e ricaricala.</div>`
+      : `<div class="msg msg-info">Attributi e topologia conformi: la fornitura è utilizzabile per la <a href="#/tavole">composizione delle tavole</a>.</div>`;
   }
-  function mostraTopologia(t) {
+  function mostraTopologia(t, pdfUrl, zipUrl, id) {
     $("#esito-topologia").innerHTML = `<div class="esito esito-sm ${t.errori ? "ko" : "ok"}"><div>
       <div class="esito-titolo">Topologia ${t.errori ? "NON CONFORME" : "CONFORME"}</div>
-      <div class="esito-meta">${t.errori} errori, ${t.avvisi} avvisi (sovrapposizioni, buchi, sconfinamenti, geometrie)</div></div></div>
+      <div class="esito-meta">${t.errori} errori, ${t.avvisi} avvisi (geometrie, sovrapposizioni, buchi, sconfinamenti)</div></div></div>
       <div class="d-flex flex-wrap gap-2 mt-2">
-        <a class="btn btn-primary btn-sm" href="${esc(t.pdf)}" target="_blank" rel="noopener">Report topologico PDF</a>
-        <a class="btn btn-outline-primary btn-sm" href="${esc(t.zip)}">Pacchetto errori (${t.formato === "gdb" ? "File Geodatabase" : "shapefile"})</a></div>`;
+        <a class="btn btn-primary btn-sm" href="${pdfUrl}" download="report_topologia_${esc(id)}.pdf">Report topologico PDF</a>
+        <a class="btn btn-outline-primary btn-sm" href="${zipUrl}" download="errori_topologia_${esc(id)}_${t.formato}.zip">Pacchetto errori (${t.formato === "gdb" ? "File Geodatabase" : "shapefile"})</a></div>`;
   }
   // Report JSON prodotto da valida_attributi.py -> stessa visualizzazione del controllo nel browser
   function mostraDaServer(rep, nomeFile, pdfUrl) {

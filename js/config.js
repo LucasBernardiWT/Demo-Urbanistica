@@ -8,6 +8,9 @@
 window.CONFIG_MOCKUP = {
   gpUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/Valida_fornitura_PSC_PSA/GPServer/Valida%20fornitura%20PSC%20PSA",
   // topoUrl: URL del task del web tool "Valida topologia PSC/PSA" (ValidazioneTopologiaPSC.pyt); vuoto = non collegato
+  // Gli shapefile sono controllati nel browser (js/topologia.js); il servizio serve solo per i File Geodatabase e va
+  // ripubblicato con le uscite testuali (report_json_testo, report_pdf_b64, errori_zip_b64) prima di attivarlo:
+  // https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/Valida_topologia_PSC_PSA/GPServer/Valida%20topologia%20PSC%20PSA
   topoUrl: "",
   token: "",
   serverAncheShapefile: false,

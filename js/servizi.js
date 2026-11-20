@@ -30,11 +30,12 @@
   function scrivi(s) { try { localStorage.setItem("psc_mockup_v2", JSON.stringify(s)); } catch (e) { /* storage pieno o bloccato */ } }
   const lavoro = (s, c) => s.forniture.find((f) => f.id === s.lavoro[c]) || null;
   // Una fornitura e' utilizzabile per tavole e invio se e' conforme negli attributi e nella topologia (errori
-  // topologici bloccanti). Se il servizio topologico non e' collegato (topoUrl vuoto) il requisito e' sospeso.
-  const topologiaRichiesta = () => !!(window.CONFIG_MOCKUP || {}).topoUrl;
+  // topologici bloccanti). Gli shapefile si controllano nel browser; per i gdb serve il servizio regionale
+  // (topoUrl): senza servizio il requisito e' sospeso per i gdb.
+  const topologiaRichiesta = (f) => f.formato !== "gdb" || !!(window.CONFIG_MOCKUP || {}).topoUrl;
   function statoUso(f) {
     if (f.nErr) return { ok: false, motivo: "attributi non conformi" };
-    if (!topologiaRichiesta()) return { ok: true, motivo: f.topologia ? "" : "topologia non verificata (servizio non collegato)" };
+    if (!topologiaRichiesta(f)) return { ok: true, motivo: f.topologia ? "" : "topologia non verificata (File Geodatabase, servizio non collegato)" };
     if (!f.topologia) return { ok: false, motivo: "in attesa del controllo topologico" };
     if (f.topologia.errori) return { ok: false, motivo: "errori topologici" };
     return { ok: true, motivo: "" };
@@ -51,7 +52,11 @@
     try { const db = await idb(); return await new Promise((ok) => { const r = db.transaction("zip").objectStore("zip").get(id); r.onsuccess = () => ok(r.result || null); r.onerror = () => ok(null); }); }
     catch (e) { return null; }
   }
-  async function zipElimina(id) { try { const db = await idb(); db.transaction("zip", "readwrite").objectStore("zip").delete(id); } catch (e) { /* ignora */ } }
+  async function zipElimina(id) {
+    try { const st = (await idb()).transaction("zip", "readwrite").objectStore("zip"); for (const k of [id, id + ":topo_pdf", id + ":topo_zip"]) st.delete(k); }
+    catch (e) { /* ignora */ }
+  }
+  function scaricaBlob(blob, nome) { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nome; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
 
   // Versione di lavoro: genera in bozza le tavole con layer minimi previsti dal catalogo QTRP che ancora
   // mancano e ricollega tutte le bozze del Comune alla nuova versione (layer minimi sempre presenti).
@@ -80,6 +85,7 @@
       scrivi(s);
     },
     statoUso: (f) => statoUso(f),
+    salvaFile: (chiave, blob) => zipSalva(chiave, blob),
     registraFornitura(f) {
       const s = leggi();
       s.forniture.unshift({ ...f, E: f.E.slice(0, MAX_SEGNALAZIONI), troncato: f.E.length > MAX_SEGNALAZIONI });
@@ -141,13 +147,18 @@
         <td><span class="pill ${f.nErr ? "pill-err" : "pill-ok"}">${f.nErr ? "non conforme" : "conforme"}</span></td>
         <td class="num">${f.nErr}</td><td class="num">${f.nAv}</td>
         <td class="text-nowrap">${f.topologia ? `<span class="pill ${f.topologia.errori ? "pill-err" : "pill-ok"}">${f.topologia.errori ? "non conforme" : "conforme"}</span>
-          <a class="small" href="${esc(f.topologia.pdf)}" target="_blank" rel="noopener">PDF</a> · <a class="small" href="${esc(f.topologia.zip)}">errori</a>`
+          <button class="btn btn-link btn-xs p-0" data-file="${f.id}:topo_pdf" data-nome="report_topologia_${f.id}.pdf" type="button">PDF</button> ·
+          <button class="btn btn-link btn-xs p-0" data-file="${f.id}:topo_zip" data-nome="errori_topologia_${f.id}_${f.topologia.formato || "shp"}.zip" type="button">errori</button>`
           : '<span class="small text-muted">non eseguita</span>'}</td>
         <td class="text-end text-nowrap">
           <button class="btn btn-outline-primary btn-xs" data-pdf="${f.id}" type="button">Report PDF</button>
           ${statoUso(f).ok && s.lavoro[f.comune] !== f.id ? `<button class="btn btn-outline-primary btn-xs" data-lavoro="${f.id}" type="button">Usa come versione di lavoro</button>` : ""}
           <button class="btn btn-link btn-xs text-danger" data-elimina="${f.id}" type="button">Elimina</button>
         </td></tr>`).join("") + "</tbody></table></div>";
+    document.querySelectorAll("[data-file]").forEach((b) => b.addEventListener("click", async () => {
+      const blob = await zipLeggi(b.dataset.file);
+      blob ? scaricaBlob(blob, b.dataset.nome) : alert("File non disponibile in questo browser: ricarica la fornitura.");
+    }));
     document.querySelectorAll("[data-pdf]").forEach((b) => b.addEventListener("click", () => window.APP.reportPdf(leggi().forniture.find((x) => x.id === b.dataset.pdf))));
     document.querySelectorAll("[data-lavoro]").forEach((b) => b.addEventListener("click", () => {
       const s = leggi(), f = s.forniture.find((x) => x.id === b.dataset.lavoro); impostaLavoro(s, f.comune, f.id); scrivi(s); forniture();

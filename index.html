@@ -6,7 +6,7 @@
   <title>Consegna PSC/PSA – Geoportale Regione Calabria</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-italia@2.18.1/dist/css/bootstrap-italia.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-  <link rel="stylesheet" href="css/portale.css?v=20261121b">
+  <link rel="stylesheet" href="css/portale.css?v=20261121m">
 </head>
 <body>
 <a class="skip-link visually-hidden-focusable" href="#main-content">Vai al contenuto</a>
@@ -232,7 +232,8 @@
             <div class="col-md-7">
               <label for="formato-errori" class="form-label-plain">Pacchetto degli errori topologici</label>
               <select id="formato-errori" class="form-select form-select-sm">
-                <option value="shp">Shapefile</option><option value="gdb">File Geodatabase</option></select>
+                <option value="shp">Shapefile</option><option value="gdb">File Geodatabase (servizio regionale)</option></select>
+              <div class="small text-muted mt-1">Gli shapefile sono controllati nel browser e il pacchetto è in shapefile; il File Geodatabase richiede il servizio regionale.</div>
             </div>
           </div>
           <span class="form-label-plain">Archivio .zip</span>
@@ -462,11 +463,14 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/shpjs/3.6.3/shp.min.js"></script>
-<script src="js/config.js?v=20261121b"></script>
-<script src="js/regole_qtrp.js?v=20261121b"></script>
-<script src="js/tavole_qtrp.js?v=20261121b"></script>
-<script src="js/comuni_calabria.js?v=20261121b"></script>
-<script src="js/app.js?v=20261121b"></script>
-<script src="js/servizi.js?v=20261121b"></script>
+<script src="https://cdn.jsdelivr.net/npm/rbush@3.0.1/rbush.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js"></script>
+<script src="js/config.js?v=20261121m"></script>
+<script src="js/regole_qtrp.js?v=20261121m"></script>
+<script src="js/tavole_qtrp.js?v=20261121m"></script>
+<script src="js/comuni_calabria.js?v=20261121m"></script>
+<script src="js/topologia.js?v=20261121m"></script>
+<script src="js/app.js?v=20261121m"></script>
+<script src="js/servizi.js?v=20261121m"></script>
 </body>
 </html>

@@ -1,0 +1,68 @@
+{
+ "_nota": "Regole topologiche del validatore PSC/PSA, ricavate dai controlli delle forniture PGT di Regione Lombardia (Guida controlli forniture PGT 2023) e adattate al QTRP. disgiunzione: 'tutti' = nessuna sovrapposizione tra record del layer; nome di un campo = vietata solo tra record con lo stesso valore; null = non controllata. copertura: il layer deve coprire tutto il territorio comunale (limite ISTAT).",
+ "tolleranze": {
+  "area_minima_errore_m2": 4,
+  "distanza_confine_m": 20,
+  "sliver_area_m2": 0.36,
+  "sliver_sottigliezza": 0.03,
+  "cuspide_angolo_gradi": 1
+ },
+ "livelli": {
+  "copertura_fuori_tolleranza": "AVVISO",
+  "contenimento_fuori_tolleranza": "AVVISO",
+  "multiparte": "AVVISO",
+  "cuspide": "AVVISO"
+ },
+ "strati": {
+  "zoneprg": {
+   "disgiunzione": "tutti",
+   "copertura": true
+  },
+  "macrozone": {
+   "disgiunzione": "tutti",
+   "copertura": true
+  },
+  "sistemi": {
+   "disgiunzione": "tutti",
+   "copertura": true
+  },
+  "modalitaintervento": {
+   "disgiunzione": "tutti",
+   "copertura": true
+  },
+  "modalitauso": {
+   "disgiunzione": "tutti",
+   "copertura": true
+  },
+  "classifattibilitapiano": {
+   "disgiunzione": "tutti",
+   "copertura": false
+  },
+  "componentiatu": {
+   "disgiunzione": "tutti",
+   "copertura": false
+  },
+  "unitapaesaggio": {
+   "disgiunzione": "tutti",
+   "copertura": false
+  },
+  "rischi": {
+   "disgiunzione": "Tipologia",
+   "copertura": false
+  },
+  "sottosistemiambientale": {
+   "disgiunzione": "Risorsa",
+   "copertura": false
+  },
+  "sottosistemirelazionale": {
+   "disgiunzione": "Tipologia",
+   "copertura": false
+  }
+ },
+ "confine_comunale": {
+  "servizio": "https://geohub-coll.regione.calabria.it/server/rest/services/viewer_catastale/istat_limiti/FeatureServer/0",
+  "campo_nome": "comune",
+  "campo_regione": "cod_reg",
+  "codice_regione": 18
+ }
+}
