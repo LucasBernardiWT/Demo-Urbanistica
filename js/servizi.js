@@ -170,8 +170,13 @@
     $("#tv-salva").disabled = m.some(([k]) => k === "err");
   }
 
+  // il form si apre sotto la tavola in modifica (in cima all'elenco per una nuova tavola)
+  const formCasa = { padre: $("#form-tavola").parentNode, dopo: $("#form-tavola").nextSibling };
+  function formACasa() { formCasa.padre.insertBefore($("#form-tavola"), formCasa.dopo); }
   function apriForm(tv, ritorno) {
     modifica = tv ? tv.id : null; dopoSalva = ritorno || null;
+    const card = tv && document.querySelector(`#lista-tavole [data-card="${tv.id}"]`);
+    if (card) card.after($("#form-tavola")); else formACasa();
     if (tv && tv.comune !== comuneCorrente) { comuneCorrente = tv.comune; }
     $("#form-tavola").hidden = false;
     $("#form-tavola-titolo").textContent = tv ? `Modifica ${tv.codice}` : "Nuova tavola";
@@ -181,13 +186,13 @@
     $("#tv-scala").value = tv ? tv.scala : "1:5.000";
     $("#tv-pdf").value = "";
     layerForm(tv ? tv.layer : null, tv && tv.minimi ? tv.minimi : []); controllaForm();
-    $("#form-tavola").scrollIntoView({ behavior: "smooth", block: "nearest" });
+    $("#form-tavola").scrollIntoView({ behavior: "smooth", block: card ? "center" : "nearest" });
   }
   $("#btn-nuova-tavola").addEventListener("click", () => {
     if (!comuneCorrente) { alert("Carica prima una fornitura: le tavole appartengono al Comune della fornitura."); return; }
     apriForm(null);
   });
-  $("#tv-annulla").addEventListener("click", () => { $("#form-tavola").hidden = true; modifica = null; if (dopoSalva) location.hash = dopoSalva; });
+  $("#tv-annulla").addEventListener("click", () => { $("#form-tavola").hidden = true; formACasa(); modifica = null; if (dopoSalva) location.hash = dopoSalva; });
   $("#tv-salva").addEventListener("click", () => {
     const s = leggi(), pdf = $("#tv-pdf").files[0], l = lavoro(s, comuneCorrente);
     if (modifica) {
@@ -205,30 +210,56 @@
     if (dopoSalva) { const r = dopoSalva; dopoSalva = null; location.hash = r; } else tavole();
   });
 
-  function cardTavola(t, azioni) {
-    return `<div class="tavola">
+  // etichetta di validita' della tavola (stessi controlli del pulsante Valida)
+  function statoValidita(t, s) {
+    if (t.stato === "inviata") return "";
+    const r = validaTavola(t, s), err = r.filter((x) => x[0] === "err"), wa = r.filter((x) => x[0] === "warn");
+    const motivi = (err.length ? err : wa).map((x) => x[1] + (x[2] ? ": " + x[2] : "")).join("; ");
+    if (!err.length && !wa.length) return '<span class="pill pill-ok">valida</span>';
+    // per le tavole da sistemare: elenco completo dei requisiti, con cosa fare per quelli non rispettati
+    const cosaFare = { "Elaborato PDF mancante": "carica il PDF con Modifica", "Layer previsti dal QTRP non inclusi": "aggiungi i layer con Modifica",
+      "Fornitura di riferimento non disponibile": "ricarica la fornitura in Carica e verifica", "Fornitura di riferimento non conforme": "scegli una versione di lavoro conforme",
+      "Layer assenti nella fornitura": "carica una fornitura che li contenga", "Layer vuoti": "compila i layer nella fornitura",
+      "La versione di lavoro è cambiata": "apri Modifica e salva", "Elaborato duplicato": "elimina la tavola in più" };
+    return `<span class="pill ${err.length ? "pill-err" : "pill-av"}" title="${esc(motivi)}">${err.length ? "non valida" : "valida con avvisi"}</span>
+      <ul class="requisiti">${r.map(([k, x, d]) => `<li class="${k}"><span class="req-ico">${k === "ok" ? "✓" : k === "err" ? "✗" : "!"}</span>
+        <span>${esc(x)}${d && k !== "ok" ? ` <span class="text-muted">(${esc(d)})</span>` : ""}${k !== "ok" && cosaFare[x] ? ` → <strong>${esc(cosaFare[x])}</strong>` : ""}</span></li>`).join("")}</ul>`;
+  }
+  function riepilogoValidita(el, s) {
+    const b = el.filter((t) => t.stato === "bozza"), n = (k) => b.filter((t) => validaTavola(t, s).some((x) => x[0] === k)).length;
+    const ko = n("err"), av = b.filter((t) => !validaTavola(t, s).some((x) => x[0] === "err") && validaTavola(t, s).some((x) => x[0] === "warn")).length;
+    if (!b.length) return "";
+    return `<div class="riepilogo-validita"><span class="pill pill-ok">${b.length - ko - av} valide</span>
+      <span class="pill pill-av">${av} con avvisi</span><span class="pill pill-err">${ko} non valide</span>
+      ${ko ? '<span class="small text-muted">Sotto ogni tavola non valida sono elencati i requisiti e cosa fare.</span>' : ""}</div>`;
+  }
+
+  function cardTavola(t, azioni, s) {
+    return `<div class="tavola" data-card="${t.id}">
       <div class="tv-cod">${esc(t.codice)}</div>
       <div class="flex-grow-1">
         <div class="fw-semibold">${esc(t.titolo)} ${t.stato === "inviata" ? `<span class="pill pill-ok">inviata · ${esc(t.protocollo)}</span>` : '<span class="pill pill-av">bozza</span>'}${t.automatica ? ' <span class="pill pill-auto" title="Generata in automatico dalla versione di lavoro">automatica</span>' : ""}</div>
         <div class="small text-muted">${esc(t.comune)} · ${esc(TAV[t.base].macro)} · scala ${esc(t.scala)}</div>
         <div class="mt-1">${t.layer.map((n) => (t.minimi || []).includes(n) ? `<span class="pill pill-blu" title="layer minimo">${esc(n)}</span>` : `<span class="pill pill-agg" title="layer aggiunto">+ ${esc(n)}</span>`).join(" ") || '<span class="small text-muted">nessun layer</span>'}</div>
         <div class="small mt-1">${t.pdf ? `PDF: ${esc(t.pdf)}` : '<span class="text-danger">PDF da caricare</span>'}</div>
+        ${s ? `<div class="mt-1">${statoValidita(t, s)}</div>` : ""}
       </div>
       <div class="text-nowrap">${azioni}</div></div>`;
   }
 
   function tavole() {
+    formACasa();
     $("#form-tavola").hidden = !modifica && $("#form-tavola").hidden;
     const s = leggi(), l = lavoro(s, comuneCorrente);
     $("#avviso-tavole").innerHTML = l
       ? `<div class="msg msg-info mb-3">Versione di lavoro: <strong>${esc(l.titolo || l.nomeFile)}</strong> (${esc(l.nomeFile)}) verificata il ${esc(l.data)}.</div>`
       : '<div class="msg msg-warn mb-3">Per questo Comune non c\'è ancora una versione di lavoro conforme: le tavole si possono impostare, i layer si collegano dopo una <a href="#/verifica">verifica</a> conforme.</div>';
     const ord = bozze(s, comuneCorrente).sort((a, b) => a.codice.localeCompare(b.codice, "it", { numeric: true }));
-    $("#lista-tavole").innerHTML = ord.length ? ord.map((t) => cardTavola(t,
+    $("#lista-tavole").innerHTML = riepilogoValidita(ord, s) + (ord.length ? ord.map((t) => cardTavola(t,
       `<a class="btn btn-outline-primary btn-xs" href="#/tavola/${t.id}">Apri</a>
        <button class="btn btn-outline-primary btn-xs" data-mod="${t.id}" type="button">${t.pdf ? "Modifica" : "Aggiungi PDF e layer"}</button>
-       ${t.automatica ? "" : `<button class="btn btn-link btn-xs text-danger" data-del="${t.id}" type="button">Elimina</button>`}`)).join("")
-      : '<div class="vuoto">Nessuna tavola in bozza. Le tavole previste dal QTRP vengono create quando il Comune ha una versione di lavoro conforme.</div>';
+       ${t.automatica ? "" : `<button class="btn btn-link btn-xs text-danger" data-del="${t.id}" type="button">Elimina</button>`}`, s)).join("")
+      : '<div class="vuoto">Nessuna tavola in bozza. Le tavole previste dal QTRP vengono create quando il Comune ha una versione di lavoro conforme.</div>');
     document.querySelectorAll("#lista-tavole [data-mod]").forEach((b) => b.addEventListener("click", () => apriForm(leggi().tavole.find((x) => x.id === b.dataset.mod))));
     document.querySelectorAll("[data-del]").forEach((b) => b.addEventListener("click", () => {
       const s = leggi(); s.tavole = s.tavole.filter((x) => x.id !== b.dataset.del); scrivi(s); tavole();
@@ -242,9 +273,9 @@
     const s = leggi(), fc = $("#g-comune").value, fs = $("#g-stato").value;
     const el = s.tavole.filter((t) => (!fc || t.comune === fc) && (!fs || t.stato === fs))
       .sort((a, b) => a.comune.localeCompare(b.comune) || a.codice.localeCompare(b.codice, "it", { numeric: true }));
-    $("#lista-gestione").innerHTML = el.length ? el.map((t) => cardTavola(t,
-      `<a class="btn btn-primary btn-xs" href="#/tavola/${t.id}">Visualizza</a>`)).join("")
-      : '<div class="vuoto">Nessuna tavola. Le tavole si creano in <a href="#/tavole">Composizione delle tavole</a>.</div>';
+    $("#lista-gestione").innerHTML = riepilogoValidita(el, s) + (el.length ? el.map((t) => cardTavola(t,
+      `<a class="btn btn-primary btn-xs" href="#/tavola/${t.id}">Visualizza</a>`, s)).join("")
+      : '<div class="vuoto">Nessuna tavola. Le tavole si creano in <a href="#/tavole">Composizione delle tavole</a>.</div>');
   }
   $("#g-stato").addEventListener("change", gestione);
 

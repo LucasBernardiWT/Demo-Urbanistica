@@ -190,3 +190,16 @@ h4, .h4, h5, .h5 { font-size: 1.1rem; } h6, .h6 { font-size: 1rem; }
 .it-footer .footer-heading { font-size: 1rem; text-transform: uppercase; }
 .footer-list { list-style: none; padding: 0; }
 .footer-list a { color: #fff; }
+
+/* form di modifica aperto sotto la tavola */
+.tavola + #form-tavola { margin-top: -.4rem; border-top: 3px solid var(--blu); }
+
+/* requisiti delle tavole da sistemare */
+.requisiti { list-style: none; padding: .5rem .75rem; margin: .4rem 0 0; background: #f8f9fa; border-radius: .25rem; font-size: .84rem; }
+.requisiti li { display: flex; gap: .45rem; padding: .12rem 0; }
+.requisiti .req-ico { width: 1rem; flex-shrink: 0; font-weight: 700; text-align: center; }
+.requisiti li.ok { color: #5c6f82; }
+.requisiti li.ok .req-ico { color: var(--verde); }
+.requisiti li.err { color: var(--rosso); }
+.requisiti li.warn { color: var(--avviso); }
+.riepilogo-validita { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-bottom: .75rem; }
