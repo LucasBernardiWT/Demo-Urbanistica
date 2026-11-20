@@ -1,7 +1,11 @@
 // Catalogo delle tavole del PSC/PSA dal modello logico semplificato del QTRP (Tomo IV, Allegato 2, par. 5).
 // multipla: il QTRP prevede "n Tavole riportanti i diversi tematismi" (il Comune ne crea quante servono).
-// layer: layer del modello logico dettagliato collegati alla categoria tramite la colonna
-//        "Modello Dati Commissione SITO" (le altre tavole non hanno un modello dati: shapefile liberi).
+// layer: layer minimi della tavola. Derivano dalla colonna "Modello Dati Commissione SITO" del modello
+//        dettagliato (layer -> categoria del modello semplificato -> tavola). Dove una categoria contiene
+//        piu' tavole la scelta e' nostra, da confermare con la Regione: unitapaesaggio -> QAU_Tav;
+//        sottosistemiambientale -> QAI_Tav, QAD_Tav (vulnerabilita'), QAV_Tav (valori), oltre a DRN_Tav.
+//        Le tavole con layer minimi vengono generate in automatico dalla versione di lavoro.
+// tema:  campo con cui colorare il layer in quella tavola (default: prima codelist del layer).
 window.TAVOLE_QTRP = [
   { macro: "Quadro conoscitivo – Quadro normativo e di pianificazione", tavole: [
     { codice: "QNS_Tav", nome: "Tavola dei piani sovracomunali e dei vincoli", multipla: false, layer: [] },
@@ -13,8 +17,8 @@ window.TAVOLE_QTRP = [
     { codice: "QAA_Tav", nome: "Studio agro-pedologico", multipla: true, layer: [] },
     { codice: "QAG_Tav", nome: "Studio geomorfologico", multipla: true, layer: [] },
     { codice: "QAU_Tav", nome: "Tavola delle unità di paesaggio", multipla: false, layer: ["unitapaesaggio"] },
-    { codice: "QAD_Tav", nome: "Tavola delle descrizioni delle vulnerabilità", multipla: false, layer: ["sottosistemiambientale"] },
-    { codice: "QAV_Tav", nome: "Tavola dei valori", multipla: false, layer: ["sottosistemiambientale"] },
+    { codice: "QAD_Tav", nome: "Tavola delle descrizioni delle vulnerabilità", multipla: false, layer: ["sottosistemiambientale"], tema: { sottosistemiambientale: "Vulnerab" } },
+    { codice: "QAV_Tav", nome: "Tavola dei valori", multipla: false, layer: ["sottosistemiambientale"], tema: { sottosistemiambientale: "valore" } },
     { codice: "QAS_Tav", nome: "Tavola di sintesi delle risorse e delle criticità del sistema ambientale", multipla: false, layer: [] },
     { codice: "QAR_Tav", nome: "Rappresentazione delle aree soggette a rischio", multipla: false, layer: ["rischi"] } ] },
   { macro: "Quadro conoscitivo – Quadro strutturale economico e morfologico", tavole: [

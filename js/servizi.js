@@ -43,11 +43,29 @@
   }
   async function zipElimina(id) { try { const db = await idb(); db.transaction("zip", "readwrite").objectStore("zip").delete(id); } catch (e) { /* ignora */ } }
 
+  // Versione di lavoro: genera in bozza le tavole con layer minimi previsti dal catalogo QTRP che ancora
+  // mancano e ricollega tutte le bozze del Comune alla nuova versione (layer minimi sempre presenti).
+  function impostaLavoro(s, comune, id) {
+    s.lavoro[comune] = id;
+    for (const g of CAT) for (const t of g.tavole) {
+      if (!t.layer.length) continue;
+      if (s.tavole.some((x) => x.comune === comune && x.stato === "bozza" && x.base === t.codice)) continue;
+      s.tavole.push({ id: "T" + Date.now().toString(36) + t.codice, comune, base: t.codice, codice: t.multipla ? `${t.codice}_1` : t.codice,
+        titolo: t.nome, scala: "1:5.000", layer: [...t.layer], minimi: [...t.layer], pdf: null, fornitura: id,
+        stato: "bozza", automatica: true, creata: ora() });
+    }
+    s.tavole.filter((x) => x.comune === comune && x.stato === "bozza").forEach((x) => {
+      x.fornitura = id;
+      x.minimi = TAV[x.base].layer.slice();
+      x.layer = [...new Set([...x.minimi, ...x.layer])];
+    });
+  }
+
   window.SERVIZI = {
     registraFornitura(f) {
       const s = leggi();
       s.forniture.unshift({ ...f, E: f.E.slice(0, MAX_SEGNALAZIONI), troncato: f.E.length > MAX_SEGNALAZIONI });
-      if (!f.nErr && !s.lavoro[f.comune]) s.lavoro[f.comune] = f.id; // la prima conforme diventa versione di lavoro
+      if (!f.nErr && !s.lavoro[f.comune]) impostaLavoro(s, f.comune, f.id); // la prima conforme diventa versione di lavoro
       scrivi(s);
       if (window.__ultimoFile && f.formato === "shapefile") zipSalva(f.id, window.__ultimoFile);
     },
@@ -111,7 +129,7 @@
         </td></tr>`).join("") + "</tbody></table></div>";
     document.querySelectorAll("[data-pdf]").forEach((b) => b.addEventListener("click", () => window.APP.reportPdf(leggi().forniture.find((x) => x.id === b.dataset.pdf))));
     document.querySelectorAll("[data-lavoro]").forEach((b) => b.addEventListener("click", () => {
-      const s = leggi(), f = s.forniture.find((x) => x.id === b.dataset.lavoro); s.lavoro[f.comune] = f.id; scrivi(s); forniture();
+      const s = leggi(), f = s.forniture.find((x) => x.id === b.dataset.lavoro); impostaLavoro(s, f.comune, f.id); scrivi(s); forniture();
     }));
     document.querySelectorAll("[data-elimina]").forEach((b) => b.addEventListener("click", () => {
       const s = leggi(), f = s.forniture.find((x) => x.id === b.dataset.elimina);
@@ -126,12 +144,14 @@
   $("#tv-codice").innerHTML = CAT.map((g) => `<optgroup label="${esc(g.macro)}">` +
     g.tavole.map((t) => `<option value="${t.codice}">${t.codice} – ${esc(t.nome)}${t.layer.length ? " ●" : ""}</option>`).join("") + "</optgroup>").join("");
 
-  function layerForm(sel) {
+  // minimi: layer minimi bloccati (tavole generate in automatico); gli altri si aggiungono o tolgono liberamente
+  function layerForm(sel, minimi = []) {
     const t = TAV[$("#tv-codice").value], l = lavoro(leggi(), comuneCorrente);
     if (!l) { $("#tv-layer").innerHTML = '<p class="small text-muted mb-0">Nessuna versione di lavoro: i layer saranno disponibili dopo una verifica conforme.</p>'; return; }
     $("#tv-layer").innerHTML = LAYER.map((n) => {
-      const prev = t.layer.includes(n), on = sel ? sel.includes(n) : prev;
-      return `<label class="tv-chip${prev ? " previsto" : ""}"><input type="checkbox" value="${n}"${on ? " checked" : ""}> ${n}${prev ? ' <span class="small">· previsto</span>' : ""}</label>`;
+      const min = minimi.includes(n), prev = t.layer.includes(n), on = min || (sel ? sel.includes(n) : prev);
+      return `<label class="tv-chip${min ? " minimo" : prev ? " previsto" : ""}"${min ? ' title="Layer minimo previsto dal QTRP: non si può togliere"' : ""}>
+        <input type="checkbox" value="${n}"${on ? " checked" : ""}${min ? " disabled" : ""}> ${n}${min ? ' <span class="small">· minimo</span>' : prev ? ' <span class="small">· previsto</span>' : ""}</label>`;
     }).join("");
   }
   $("#tv-codice").addEventListener("change", () => { if (!modifica) $("#tv-titolo").value = TAV[$("#tv-codice").value].nome; layerForm(); controllaForm(); });
@@ -160,7 +180,7 @@
     $("#tv-titolo").value = tv ? tv.titolo : TAV[$("#tv-codice").value].nome;
     $("#tv-scala").value = tv ? tv.scala : "1:5.000";
     $("#tv-pdf").value = "";
-    layerForm(tv ? tv.layer : null); controllaForm();
+    layerForm(tv ? tv.layer : null, tv && tv.minimi ? tv.minimi : []); controllaForm();
     $("#form-tavola").scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
   $("#btn-nuova-tavola").addEventListener("click", () => {
@@ -189,9 +209,9 @@
     return `<div class="tavola">
       <div class="tv-cod">${esc(t.codice)}</div>
       <div class="flex-grow-1">
-        <div class="fw-semibold">${esc(t.titolo)} ${t.stato === "inviata" ? `<span class="pill pill-ok">inviata · ${esc(t.protocollo)}</span>` : '<span class="pill pill-av">bozza</span>'}</div>
+        <div class="fw-semibold">${esc(t.titolo)} ${t.stato === "inviata" ? `<span class="pill pill-ok">inviata · ${esc(t.protocollo)}</span>` : '<span class="pill pill-av">bozza</span>'}${t.automatica ? ' <span class="pill pill-auto" title="Generata in automatico dalla versione di lavoro">automatica</span>' : ""}</div>
         <div class="small text-muted">${esc(t.comune)} · ${esc(TAV[t.base].macro)} · scala ${esc(t.scala)}</div>
-        <div class="mt-1">${t.layer.map((n) => `<span class="pill pill-blu">${esc(n)}</span>`).join(" ") || '<span class="small text-muted">nessun layer</span>'}</div>
+        <div class="mt-1">${t.layer.map((n) => (t.minimi || []).includes(n) ? `<span class="pill pill-blu" title="layer minimo">${esc(n)}</span>` : `<span class="pill pill-agg" title="layer aggiunto">+ ${esc(n)}</span>`).join(" ") || '<span class="small text-muted">nessun layer</span>'}</div>
         <div class="small mt-1">${t.pdf ? `PDF: ${esc(t.pdf)}` : '<span class="text-danger">PDF da caricare</span>'}</div>
       </div>
       <div class="text-nowrap">${azioni}</div></div>`;
@@ -206,8 +226,10 @@
     const ord = bozze(s, comuneCorrente).sort((a, b) => a.codice.localeCompare(b.codice, "it", { numeric: true }));
     $("#lista-tavole").innerHTML = ord.length ? ord.map((t) => cardTavola(t,
       `<a class="btn btn-outline-primary btn-xs" href="#/tavola/${t.id}">Apri</a>
-       <button class="btn btn-link btn-xs text-danger" data-del="${t.id}" type="button">Elimina</button>`)).join("")
-      : '<div class="vuoto">Nessuna tavola in bozza. Usa "+ Nuova tavola" per comporne una.</div>';
+       <button class="btn btn-outline-primary btn-xs" data-mod="${t.id}" type="button">${t.pdf ? "Modifica" : "Aggiungi PDF e layer"}</button>
+       ${t.automatica ? "" : `<button class="btn btn-link btn-xs text-danger" data-del="${t.id}" type="button">Elimina</button>`}`)).join("")
+      : '<div class="vuoto">Nessuna tavola in bozza. Le tavole previste dal QTRP vengono create quando il Comune ha una versione di lavoro conforme.</div>';
+    document.querySelectorAll("#lista-tavole [data-mod]").forEach((b) => b.addEventListener("click", () => apriForm(leggi().tavole.find((x) => x.id === b.dataset.mod))));
     document.querySelectorAll("[data-del]").forEach((b) => b.addEventListener("click", () => {
       const s = leggi(); s.tavole = s.tavole.filter((x) => x.id !== b.dataset.del); scrivi(s); tavole();
     }));
@@ -297,7 +319,8 @@
       const col = COLORI[i % COLORI.length];
       // simbologia per classi sulla prima codelist del layer (es. Macrozona), dalle regole del template
       const regola = window.REGOLE_QTRP.layer.find((l) => l.nome === n);
-      const cc = regola && regola.campi.find((c) => c.valori);
+      const temaTav = TAV[t.base].tema && TAV[t.base].tema[n];
+      const cc = regola && (regola.campi.find((c) => c.nome === temaTav && c.valori) || regola.campi.find((c) => c.valori));
       const campoChiave = cc ? cc.nome : null;
       const tinta = (v) => (cc && cc.valori.includes(v) ? COLORI[(i + cc.valori.indexOf(v)) % COLORI.length] : col);
       const presenti = cc ? cc.valori.filter((v) => g.features.some((f) => f.properties[campoChiave] === v)) : [];

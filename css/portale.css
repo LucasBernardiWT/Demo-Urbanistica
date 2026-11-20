@@ -92,6 +92,10 @@ h4, .h4, h5, .h5 { font-size: 1.1rem; } h6, .h6 { font-size: 1rem; }
 .tv-chip { display: inline-flex; align-items: center; gap: .35rem; padding: .25rem .6rem; border: 1px solid #c5cfd9; border-radius: 1rem;
   font-size: .85rem; cursor: pointer; margin: 0; }
 .tv-chip.previsto { border-color: var(--blu); background: #f2f7fd; }
+.tv-chip.minimo { border-color: var(--blu); background: var(--blu); color: #fff; cursor: not-allowed; }
+.tv-chip.minimo input { accent-color: #fff; }
+.pill-auto { background: #ede7f6; color: #4527a0; }
+.pill-agg { background: #fff; color: var(--blu); border: 1px dashed var(--blu); font-weight: 600; }
 .msg { padding: .55rem .8rem; border-left: 4px solid; font-size: .88rem; margin-bottom: .4rem; background: #f8f9fa; }
 .msg-err { border-color: var(--rosso); color: var(--rosso); background: #fbe5e5; }
 .msg-warn { border-color: var(--arancio); background: #fff6ea; }

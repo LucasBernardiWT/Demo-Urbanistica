@@ -6,7 +6,7 @@
   <title>Consegna PSC/PSA – Geoportale Regione Calabria</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-italia@2.18.1/dist/css/bootstrap-italia.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-  <link rel="stylesheet" href="css/portale.css?v=20261120b">
+  <link rel="stylesheet" href="css/portale.css?v=20261120c">
 </head>
 <body>
 <a class="skip-link visually-hidden-focusable" href="#main-content">Vai al contenuto</a>
@@ -301,6 +301,9 @@
           <p class="mb-3">Il QTRP (Tomo IV, Allegato 2) prevede per ogni elaborato una tavola in PDF con i relativi shapefile.
             Per molte categorie le tavole possono essere più d'una ("n tavole riportanti i diversi tematismi"):
             ogni tavola collega il PDF ai layer della versione di lavoro. Uno stesso layer può comparire in più tavole.</p>
+          <p class="mb-3">Le <strong>13 tavole con layer minimi</strong> previsti dal QTRP vengono create in automatico quando il Comune ha una versione
+            di lavoro conforme, e si ricollegano da sole quando la versione cambia. Il Comune carica il PDF, può aggiungere layer non previsti
+            e creare le altre tavole.</p>
           <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
             <label for="t-comune" class="small fw-semibold mb-0">Comune</label>
             <select id="t-comune" class="form-select form-select-sm w-auto sel-comune"></select>
@@ -451,11 +454,11 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/shpjs/3.6.3/shp.min.js"></script>
-<script src="js/config.js?v=20261120b"></script>
-<script src="js/regole_qtrp.js?v=20261120b"></script>
-<script src="js/tavole_qtrp.js?v=20261120b"></script>
-<script src="js/comuni_calabria.js?v=20261120b"></script>
-<script src="js/app.js?v=20261120b"></script>
-<script src="js/servizi.js?v=20261120b"></script>
+<script src="js/config.js?v=20261120c"></script>
+<script src="js/regole_qtrp.js?v=20261120c"></script>
+<script src="js/tavole_qtrp.js?v=20261120c"></script>
+<script src="js/comuni_calabria.js?v=20261120c"></script>
+<script src="js/app.js?v=20261120c"></script>
+<script src="js/servizi.js?v=20261120c"></script>
 </body>
 </html>
