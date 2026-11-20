@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Consegna PSC/PSA – Geoportale Regione Calabria</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-italia@2.18.1/dist/css/bootstrap-italia.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <link rel="stylesheet" href="css/portale.css">
+</head>
+<body>
+<a class="skip-link visually-hidden-focusable" href="#main-content">Vai al contenuto</a>
+
+<!-- Header: stesso impianto del Geoportale (Bootstrap Italia, it-header) -->
+<header class="it-header-wrapper">
+  <div class="it-nav-wrapper">
+    <div class="it-header-center-wrapper">
+      <div class="container">
+        <div class="row"><div class="col-12">
+          <div class="it-header-center-content-wrapper">
+            <div class="it-brand-wrapper">
+              <a href="#">
+                <div class="it-brand-text">
+                  <div class="it-brand-title">Geoportale Regione Calabria</div>
+                  <div class="it-brand-tagline d-none d-md-block">Dati e servizi geografici del territorio calabrese</div>
+                </div>
+              </a>
+            </div>
+            <div class="it-right-zone">
+              <div class="loghi d-none d-lg-flex">
+                <img src="assets/CoesioneItalia_SCUOLA-Orizz_RGB-neg-1.svg" alt="Coesione Italia">
+                <span class="sep"></span>
+                <img src="assets/logo-regione-calabria.png" alt="Regione Calabria">
+              </div>
+              <span class="lingua d-none d-md-inline">ITA <svg class="ico" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></span>
+              <span class="badge-mockup">MOCKUP</span>
+              <span class="btn btn-sm btn-utente"><svg class="ico" viewBox="0 0 24 24"><path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Zm0 2c-4.4 0-8 2.2-8 5v2h16v-2c0-2.8-3.6-5-8-5Z"/></svg><span class="d-none d-md-inline"> Ufficio tecnico comunale</span></span>
+            </div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+    <div class="it-header-navbar-wrapper">
+      <div class="container">
+        <div class="row"><div class="col-12">
+          <nav class="navbar navbar-expand-lg" aria-label="Menu principale">
+            <div class="navbar-collapsable d-block">
+              <div class="menu-wrapper">
+                <ul class="navbar-nav">
+                  <li class="nav-item"><a class="nav-link" href="#"><span>Home</span></a></li>
+                  <li class="nav-item"><a class="nav-link" href="#"><span>Notizie</span></a></li>
+                  <li class="nav-item"><a class="nav-link" href="#"><span>Servizi GIS</span> <svg class="ico" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></a></li>
+                  <li class="nav-item"><a class="nav-link active" href="#" aria-current="page"><span>Normativa e Pianificazione</span> <svg class="ico" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></a></li>
+                  <li class="nav-item"><a class="nav-link" href="#"><span>Geocatalogo</span> <svg class="ico" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></a></li>
+                  <li class="nav-item"><a class="nav-link" href="#"><span>Come usare il Geoportale</span> <svg class="ico" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></a></li>
+                  <li class="nav-item"><a class="nav-link" href="#"><span>Link e Contatti</span> <svg class="ico" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></a></li>
+                </ul>
+              </div>
+            </div>
+          </nav>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main id="main-content" tabindex="-1">
+  <section class="page-header-band text-white text-center">
+    <div class="container">
+      <h1 id="band-titolo" class="text-white mb-2">Pianificazione comunale – PSC/PSA</h1>
+      <p id="band-sottotitolo" class="sottotitolo text-white mb-0 mx-auto"></p>
+    </div>
+  </section>
+
+  <!-- barra di ritorno all'area servizi (nascosta in home) -->
+  <div id="barra-contesto" class="barra-contesto" hidden>
+    <div class="container">
+      <a href="#/" class="link-area"><svg class="ico" viewBox="0 0 24 24"><path d="M15.4 7.4 14 6l-6 6 6 6 1.4-1.4L10.8 12z"/></svg> Area PSC/PSA</a>
+    </div>
+  </div>
+
+  <div class="container my-4">
+
+    <!-- ===================== HOME: SERVIZI ===================== -->
+    <div class="vista" data-vista="home">
+      <h2 class="h5 titolo-gruppo">Per i Comuni</h2>
+      <div class="griglia-servizi mb-5">
+        <a class="servizio" href="#/template">
+          <svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v3h16v-3"/></svg>
+          <span class="s-titolo">Template e regole</span>
+          <span class="s-desc">Scarica il template dei dati del QTRP in RDN2008 o WGS84 e consulta layer, campi e codelist.</span>
+          <span class="s-btn">Apri <svg class="ico" viewBox="0 0 24 24"><path d="M5 11h11.2l-4.6-4.6L13 5l7 7-7 7-1.4-1.4 4.6-4.6H5z"/></svg></span></a>
+        <a class="servizio" href="#/verifica">
+          <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z"/></svg>
+          <span class="s-titolo">Verifica della fornitura</span>
+          <span class="s-desc">Carica lo zip dei dati quando vuoi, anche più volte durante la redazione, e ricevi il report di controllo.</span>
+          <span class="s-btn">Apri <svg class="ico" viewBox="0 0 24 24"><path d="M5 11h11.2l-4.6-4.6L13 5l7 7-7 7-1.4-1.4 4.6-4.6H5z"/></svg></span></a>
+        <a class="servizio" href="#/forniture">
+          <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+          <span class="s-titolo">Le mie forniture</span>
+          <span class="s-desc">Storico delle verifiche con i report. Scegli la versione conforme su cui comporre le tavole.</span>
+          <span class="s-btn">Apri <svg class="ico" viewBox="0 0 24 24"><path d="M5 11h11.2l-4.6-4.6L13 5l7 7-7 7-1.4-1.4 4.6-4.6H5z"/></svg></span></a>
+        <a class="servizio" href="#/tavole">
+          <svg viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5"/></svg>
+          <span class="s-titolo">Composizione delle tavole</span>
+          <span class="s-desc">Crea le tavole previste dal QTRP associando i layer caricati e il PDF dell'elaborato.</span>
+          <span class="s-btn">Apri <svg class="ico" viewBox="0 0 24 24"><path d="M5 11h11.2l-4.6-4.6L13 5l7 7-7 7-1.4-1.4 4.6-4.6H5z"/></svg></span></a>
+        <a class="servizio" href="#/gestione">
+          <svg viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Zm0 0v14m6-12v14"/></svg>
+          <span class="s-titolo">Visualizza, modifica e valida le tavole</span>
+          <span class="s-desc">Apri sulla mappa le tavole salvate o inviate, modificale e verificane la coerenza con i dati.</span>
+          <span class="s-btn">Apri <svg class="ico" viewBox="0 0 24 24"><path d="M5 11h11.2l-4.6-4.6L13 5l7 7-7 7-1.4-1.4 4.6-4.6H5z"/></svg></span></a>
+        <a class="servizio" href="#/invio">
+          <svg viewBox="0 0 24 24"><path d="M3 11l18-8-8 18-2-8-8-2Z"/></svg>
+          <span class="s-titolo">Invio alla Regione</span>
+          <span class="s-desc">Quando il piano è completo, invia dati e tavole alla Regione e ricevi la ricevuta di consegna.</span>
+          <span class="s-btn">Apri <svg class="ico" viewBox="0 0 24 24"><path d="M5 11h11.2l-4.6-4.6L13 5l7 7-7 7-1.4-1.4 4.6-4.6H5z"/></svg></span></a>
+      </div>
+      <h2 class="h5 titolo-gruppo">Per la Regione Calabria</h2>
+      <div class="griglia-servizi">
+        <a class="servizio disabilitato" aria-disabled="true">
+          <svg viewBox="0 0 24 24"><path d="M9 5H5v14h14v-4M14 4h6v6M20 4l-9 9"/></svg>
+          <span class="s-titolo">Istruttoria delle consegne</span>
+          <span class="s-desc">Elenco dei piani inviati dai Comuni, report di controllo, esito dell'istruttoria.</span>
+          <span class="s-btn">in arrivo</span></a>
+        <a class="servizio disabilitato" aria-disabled="true">
+          <svg viewBox="0 0 24 24"><path d="M3 3h18v18H3zM3 9h18M9 21V9"/></svg>
+          <span class="s-titolo">Mosaico regionale dei PSC</span>
+          <span class="s-desc">I piani consegnati, uniti in un'unica cartografia regionale sul Geoportale.</span>
+          <span class="s-btn">in arrivo</span></a>
+        <a class="servizio disabilitato" aria-disabled="true">
+          <svg viewBox="0 0 24 24"><path d="M4 19h16M7 16V9m5 7V5m5 11v-4"/></svg>
+          <span class="s-titolo">Cruscotto urbanistica</span>
+          <span class="s-desc">Stato di adozione e attuazione degli strumenti di pianificazione comunale.</span>
+          <span class="s-btn">sul Geoportale</span></a>
+      </div>
+    </div>
+
+    <!-- ===================== TEMPLATE ===================== -->
+    <div class="vista" data-vista="template" hidden>
+    <section id="sez-template" class="mb-5">
+      <div class="row g-4">
+        <div class="col-lg-7">
+          <div class="callout note">
+            <div class="callout-title"><svg class="ico" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 15h-2v-6h2v6Zm0-8h-2V7h2v2Z"/></svg> Perché due sistemi di riferimento</div>
+            <p>Il sistema geodetico nazionale adottato per legge dalle Pubbliche Amministrazioni è
+              <strong>RDN2008</strong> (DPCM 10 novembre 2011): per il territorio calabrese la proiezione è
+              <strong>RDN2008 / UTM fuso 33N, EPSG:7792</strong>.</p>
+            <p>Il <strong>QTRP</strong> della Regione Calabria indica invece per l'Infrastruttura di Dati Territoriali regionale il sistema
+              <strong>WGS84 / UTM fuso 33N, EPSG:32633</strong>.</p>
+            <p class="mb-0">In attesa dell'allineamento del QTRP alla norma nazionale, il template è disponibile in entrambi i sistemi:
+              contenuti, campi e codelist sono identici, cambia solo il sistema di riferimento.
+              <strong>Si consiglia RDN2008.</strong></p>
+          </div>
+        </div>
+        <div class="col-lg-5">
+          <div class="card card-bg shadow-sm h-100"><div class="card-body p-4">
+            <fieldset class="mb-4">
+              <legend class="h6 legend-plain">Sistema di riferimento</legend>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="crs" id="crs-7792" value="RDN2008_UTM33N" checked>
+                <label class="form-check-label" for="crs-7792">RDN2008 / UTM 33N – EPSG:7792 <span class="badge bg-success ms-1">consigliato</span></label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="crs" id="crs-32633" value="WGS84_UTM33N">
+                <label class="form-check-label" for="crs-32633">WGS84 / UTM 33N – EPSG:32633 <span class="badge bg-secondary ms-1">QTRP</span></label>
+              </div>
+            </fieldset>
+            <fieldset class="mb-4">
+              <legend class="h6 legend-plain">Formato</legend>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="fmt" id="fmt-shp" value="shp" checked>
+                <label class="form-check-label" for="fmt-shp">Shapefile <small class="text-muted">(formato di consegna previsto dal QTRP)</small></label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="fmt" id="fmt-gdb" value="gdb">
+                <label class="form-check-label" for="fmt-gdb">File Geodatabase <small class="text-muted">(con codelist e codelist dipendenti già impostate)</small></label>
+              </div>
+            </fieldset>
+            <a id="btn-template" class="btn btn-primary w-100" href="#" download>
+              <svg class="ico ico-w" viewBox="0 0 24 24"><path d="M11 3h2v10l3.5-3.5 1.4 1.4L12 16.8l-5.9-5.9 1.4-1.4L11 13V3ZM4 19h16v2H4z"/></svg>
+              Scarica il template</a>
+            <p id="nome-template" class="small text-muted mt-2 mb-0"></p>
+          </div></div>
+        </div>
+      </div>
+
+      <div class="accordion mt-4" id="acc-template">
+        <div class="accordion-item">
+          <h3 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-toggle-target="contenuto-template" aria-expanded="false">
+              Contenuto del template: <span id="n-layer" class="ms-1"></span>
+            </button>
+          </h3>
+          <div id="contenuto-template" class="accordion-collapse collapse">
+            <div class="accordion-body">
+              <p class="small text-muted">Elenco generato dal geodatabase di riferimento (<span id="origine-regole"></span>).
+                Tutti i layer sono poligonali e vanno consegnati: le consegne parziali non sono ammesse.</p>
+              <div id="tabella-template" class="table-responsive"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    </div>
+
+    <!-- ===================== VERIFICA ===================== -->
+    <div class="vista" data-vista="verifica" hidden>
+    <section id="sez-upload" class="mb-5">
+      <p class="mb-3">La verifica non è un invio: si può ripetere quante volte serve durante la redazione del piano.
+        Ogni verifica resta nello storico di <a href="#/forniture">Le mie forniture</a>.</p>
+      <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+        <label for="comune" class="small fw-semibold mb-0">Comune</label>
+        <select id="comune" class="form-select form-select-sm w-auto sel-comune"></select>
+        <label for="strumento" class="small fw-semibold mb-0 ms-2">Strumento</label>
+        <select id="strumento" class="form-select form-select-sm w-auto"><option>PSC</option><option>PSA</option><option>Variante PSC</option></select>
+      </div>
+      <div class="row g-4">
+        <div class="col-lg-7">
+          <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-describedby="dz-help">
+            <svg class="dz-ico" viewBox="0 0 24 24"><path d="M19.4 10a7.5 7.5 0 0 0-14.3-2A6 6 0 0 0 6 20h13a5 5 0 0 0 .4-10ZM13 13v4h-2v-4H8l4-4 4 4h-3Z"/></svg>
+            <p class="h5 mb-1">Trascina qui l'archivio .zip della fornitura</p>
+            <p id="dz-help" class="mb-3 text-muted">oppure</p>
+            <label class="btn btn-outline-primary mb-0">Seleziona file<input id="file" type="file" accept=".zip" hidden></label>
+            <p class="small text-muted mt-3 mb-0">Archivio zip con la cartella degli shapefile oppure con il File Geodatabase (.gdb)</p>
+          </div>
+        </div>
+        <div class="col-lg-5">
+          <div class="card card-bg shadow-sm"><div class="card-body p-4">
+            <h3 class="h6">Cosa viene controllato</h3>
+            <ul class="lista-controlli" id="lista-controlli">
+              <li data-k="archivio">Lettura dell'archivio</li>
+              <li data-k="completezza">Completezza: tutti gli 11 layer</li>
+              <li data-k="crs">Sistema di riferimento</li>
+              <li data-k="struttura">Struttura dei campi</li>
+              <li data-k="valori">Compilazione e codelist</li>
+              <li data-k="dipendenze">Codelist dipendenti</li>
+              <li data-k="topologia" class="futuro">Controlli geometrici e topologici <span class="badge bg-light text-dark border">in sviluppo</span></li>
+            </ul>
+            <hr>
+            <p class="small mb-2"><strong>Forniture di esempio</strong> per provare il servizio:</p>
+            <ul class="small mb-0">
+              <li><a href="demo/Lamezia_Terme_PSC_shp.zip" download>Lamezia Terme – PSC (shapefile, conforme)</a></li>
+              <li><a href="demo/Comune_Prova_con_errori_shp.zip" download>Comune di prova (shapefile con errori)</a></li>
+            </ul>
+          </div></div>
+        </div>
+      </div>
+      <div id="stato-elaborazione" class="mt-4" hidden>
+        <div class="progress progress-indeterminate"><div class="progress-bar" role="progressbar"></div></div>
+        <p id="stato-testo" class="small text-muted mt-2" aria-live="polite"></p>
+      </div>
+      <div id="avviso-gdb" class="alert alert-info mt-4" role="alert" hidden></div>
+    </section>
+
+    <!-- ===================== 3. REPORT ===================== -->
+    <section id="sez-report" class="mb-5" hidden>
+      <h2 class="h4 mb-3">Esito del controllo</h2>
+      <div id="esito" class="esito"></div>
+      <div class="d-flex flex-wrap gap-2 my-4">
+        <button id="btn-pdf" class="btn btn-primary" type="button">
+          <svg class="ico ico-w" viewBox="0 0 24 24"><path d="M11 3h2v10l3.5-3.5 1.4 1.4L12 16.8l-5.9-5.9 1.4-1.4L11 13V3ZM4 19h16v2H4z"/></svg>
+          Scarica il report PDF</button>
+        <button id="btn-csv" class="btn btn-outline-primary" type="button">Scarica l'elenco errori (CSV)</button>
+        <button id="btn-nuova" class="btn btn-outline-secondary" type="button">Nuova verifica</button>
+      </div>
+      <h3 class="h5">1. Quadro della consegna</h3>
+      <div id="tab-quadro" class="table-responsive mb-4"></div>
+      <h3 class="h5">2. Sintesi per controllo</h3>
+      <div id="tab-sintesi" class="table-responsive mb-4"></div>
+      <h3 class="h5">3. Elenco analitico</h3>
+      <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+        <label for="filtro-layer" class="small mb-0">Layer</label>
+        <select id="filtro-layer" class="form-select form-select-sm w-auto"></select>
+        <label for="filtro-livello" class="small mb-0 ms-2">Livello</label>
+        <select id="filtro-livello" class="form-select form-select-sm w-auto">
+          <option value="">tutti</option><option>ERRORE</option><option>AVVISO</option></select>
+      </div>
+      <div id="tab-analitico" class="table-responsive mb-4"></div>
+      <h3 class="h5">4. Controlli geometrici e topologici</h3>
+      <div class="callout warning"><div class="callout-title">In sviluppo</div>
+        <p class="mb-0">Nelle prossime versioni: qualità delle geometrie (autointersezioni, sliver, vertici duplicati),
+          sovrapposizioni nei layer, copertura completa del territorio comunale per i layer di zonizzazione
+          rispetto al limite ISTAT (tolleranza 20 m).</p></div>
+    </section>
+    </div>
+
+    <!-- ===================== LE MIE FORNITURE ===================== -->
+    <div class="vista" data-vista="forniture" hidden>
+      <p class="mb-3">Ogni verifica eseguita resta qui con il suo report. La <strong>versione di lavoro</strong> di un Comune è la fornitura conforme
+        da cui si compongono le tavole e che verrà inviata alla Regione.</p>
+      <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+        <label for="f-comune" class="small fw-semibold mb-0">Comune</label>
+        <select id="f-comune" class="form-select form-select-sm w-auto sel-comune" data-tutti="1"></select>
+      </div>
+      <div id="lista-forniture"></div>
+      <div class="d-flex gap-2 mt-3">
+        <a href="#/verifica" class="btn btn-primary btn-sm">Nuova verifica</a>
+      </div>
+    </div>
+
+    <!-- ===================== TAVOLE ===================== -->
+    <div class="vista" data-vista="tavole" hidden>
+      <div class="row g-4">
+        <div class="col-lg-8">
+          <p class="mb-3">Il QTRP (Tomo IV, Allegato 2) prevede per ogni elaborato una tavola in PDF con i relativi shapefile.
+            Per molte categorie le tavole possono essere più d'una ("n tavole riportanti i diversi tematismi"):
+            ogni tavola collega il PDF ai layer della versione di lavoro. Uno stesso layer può comparire in più tavole.</p>
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+            <label for="t-comune" class="small fw-semibold mb-0">Comune</label>
+            <select id="t-comune" class="form-select form-select-sm w-auto sel-comune"></select>
+          </div>
+          <div id="avviso-tavole"></div>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h2 class="h5 mb-0">Tavole del piano</h2>
+            <button id="btn-nuova-tavola" class="btn btn-primary btn-sm" type="button">+ Nuova tavola</button>
+          </div>
+          <div id="form-tavola" class="card card-bg shadow-sm mb-3" hidden><div class="card-body p-4">
+            <h3 class="h6 mb-3" id="form-tavola-titolo">Nuova tavola</h3>
+            <div class="row g-3">
+              <div class="col-md-8">
+                <label for="tv-codice" class="form-label-plain">Elaborato del QTRP</label>
+                <select id="tv-codice" class="form-select form-select-sm"></select>
+              </div>
+              <div class="col-md-4">
+                <label for="tv-scala" class="form-label-plain">Scala</label>
+                <select id="tv-scala" class="form-select form-select-sm"><option>1:5.000</option><option>1:10.000</option><option>1:2.000</option><option>1:25.000</option></select>
+              </div>
+              <div class="col-12">
+                <label for="tv-titolo" class="form-label-plain">Titolo della tavola</label>
+                <input id="tv-titolo" class="form-control form-control-sm" type="text">
+              </div>
+              <div class="col-12">
+                <span class="form-label-plain">Layer della tavola</span>
+                <div id="tv-layer" class="tv-layer"></div>
+              </div>
+              <div class="col-12">
+                <label for="tv-pdf" class="form-label-plain">Elaborato PDF</label>
+                <input id="tv-pdf" class="form-control form-control-sm" type="file" accept=".pdf">
+              </div>
+            </div>
+            <div id="tv-messaggi" class="mt-3"></div>
+            <div class="d-flex gap-2 mt-3">
+              <button id="tv-salva" class="btn btn-primary btn-sm" type="button">Salva tavola</button>
+              <button id="tv-annulla" class="btn btn-outline-secondary btn-sm" type="button">Annulla</button>
+            </div>
+          </div></div>
+          <div id="lista-tavole"></div>
+        </div>
+        <div class="col-lg-4">
+          <div class="card card-bg shadow-sm"><div class="card-body p-4">
+            <h3 class="h6">Layer nelle tavole</h3>
+            <p class="small text-muted">Ogni layer della versione di lavoro deve comparire in almeno una tavola.</p>
+            <ul id="copertura-layer" class="lista-controlli"></ul>
+          </div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== GESTIONE TAVOLE ===================== -->
+    <div class="vista" data-vista="gestione" hidden>
+      <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+        <label for="g-comune" class="small fw-semibold mb-0">Comune</label>
+        <select id="g-comune" class="form-select form-select-sm w-auto sel-comune" data-tutti="1"></select>
+        <label for="g-stato" class="small fw-semibold mb-0 ms-2">Stato</label>
+        <select id="g-stato" class="form-select form-select-sm w-auto">
+          <option value="">tutte</option><option value="bozza">in bozza</option><option value="inviata">inviate</option></select>
+      </div>
+      <div id="lista-gestione"></div>
+    </div>
+
+    <!-- ===================== SCHEDA TAVOLA ===================== -->
+    <div class="vista" data-vista="tavola" hidden>
+      <div id="tv-testata" class="mb-3"></div>
+      <div class="row g-4">
+        <div class="col-lg-8">
+          <div id="mappa" class="mappa"></div>
+          <p id="mappa-stato" class="small text-muted mt-2 mb-0"></p>
+        </div>
+        <div class="col-lg-4">
+          <div class="card card-bg shadow-sm mb-3"><div class="card-body p-3">
+            <h2 class="h6">Layer</h2>
+            <div id="legenda"></div>
+          </div></div>
+          <div class="card card-bg shadow-sm"><div class="card-body p-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h2 class="h6 mb-0">Convalida</h2>
+              <button id="btn-valida-tavola" class="btn btn-outline-primary btn-xs" type="button">Valida</button>
+            </div>
+            <div id="esito-validazione" class="small text-muted">Premi Valida per controllare la tavola rispetto ai dati e al QTRP.</div>
+          </div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== INVIO ===================== -->
+    <div class="vista" data-vista="invio" hidden>
+      <p class="mb-3">L'invio è definitivo: la Regione riceve la versione di lavoro con le tavole in bozza e avvia l'istruttoria.
+        Prima dell'invio devono essere soddisfatte tutte le condizioni.</p>
+      <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+        <label for="i-comune" class="small fw-semibold mb-0">Comune</label>
+        <select id="i-comune" class="form-select form-select-sm w-auto sel-comune"></select>
+      </div>
+      <div class="row g-4">
+        <div class="col-lg-7">
+          <div class="card card-bg shadow-sm"><div class="card-body p-4">
+            <h2 class="h6">Condizioni per l'invio</h2>
+            <ul id="checklist-invio" class="lista-controlli"></ul>
+            <div class="form-check mt-3">
+              <input class="form-check-input" type="checkbox" id="dichiarazione">
+              <label class="form-check-label small" for="dichiarazione">Dichiaro che dati e tavole corrispondono al piano adottato dal Consiglio comunale.</label>
+            </div>
+            <button id="btn-invia" class="btn btn-primary mt-3" type="button" disabled>Invia alla Regione</button>
+          </div></div>
+        </div>
+        <div class="col-lg-5">
+          <div id="riepilogo-invio"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="it-footer">
+  <div class="it-footer-main">
+    <div class="container">
+      <div class="row"><div class="col-12 footer-items-wrapper logo-wrapper">
+        <img class="footer-logo" src="assets/logo-regione-calabria.png" alt="Regione Calabria">
+      </div></div>
+      <div class="row">
+        <div class="col-lg-4 col-md-4 pb-2">
+          <h2 class="footer-heading">Progetto cofinanziato da</h2>
+          <p>Agenzia per l'Italia Digitale</p>
+          <img src="assets/logo-agid.svg" width="150" alt="AgID">
+          <img src="assets/CoesioneItalia_SCUOLA-Orizz_RGB-neg-1.svg" width="150" class="mt-2 d-block" alt="Coesione Italia">
+        </div>
+        <div class="col-lg-4 col-md-4 pb-2">
+          <h2 class="footer-heading">Tutti i diritti riservati</h2>
+          <p>© Copyright 2023<br><br>Regione Calabria<br>Cittadella Regionale - Località Germaneto<br>88100 Catanzaro<br>Italia</p>
+          <p>Dipartimento Territorio e Tutela dell'Ambiente</p>
+        </div>
+        <div class="col-lg-4 col-md-4 pb-2">
+          <h2 class="footer-heading">Link</h2>
+          <ul class="footer-list">
+            <li><a href="#">Privacy</a></li><li><a href="#">Note legali</a></li><li><a href="#">Contattaci</a></li>
+            <li><a href="#">Normativa regionale</a></li><li><a href="#">Dichiarazione di accessibilità</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/shpjs/3.6.3/shp.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/regole_qtrp.js"></script>
+<script src="js/tavole_qtrp.js"></script>
+<script src="js/app.js"></script>
+<script src="js/servizi.js"></script>
+</body>
+</html>
