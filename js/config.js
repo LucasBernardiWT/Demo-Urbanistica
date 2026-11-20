@@ -7,6 +7,8 @@
 // serverAncheShapefile: true = anche gli shapefile vengono controllati sul server invece che nel browser.
 window.CONFIG_MOCKUP = {
   gpUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/Valida_fornitura_PSC_PSA/GPServer/Valida%20fornitura%20PSC%20PSA",
+  // topoUrl: URL del task del web tool "Valida topologia PSC/PSA" (ValidazioneTopologiaPSC.pyt); vuoto = non collegato
+  topoUrl: "",
   token: "",
   serverAncheShapefile: false,
 };

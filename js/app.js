@@ -119,7 +119,7 @@
   function nuovaFornitura() {
     fileScelto = null; $("#titolo-fornitura").value = ""; dz.classList.remove("scelto");
     $("#dz-testo").textContent = "Trascina qui lo zip con la cartella degli shapefile o con il File Geodatabase";
-    $("#sez-report").hidden = true; $("#avviso-gdb").hidden = true; resetLista(); pronto();
+    $("#sez-report").hidden = true; $("#avviso-gdb").hidden = true; $("#esito-topologia").innerHTML = ""; resetLista(); pronto();
   }
   $("#btn-nuova").addEventListener("click", nuovaFornitura);
   function passo() { /* nessun indicatore di passi in questa versione */ }
@@ -170,6 +170,7 @@
       if (CFG.gpUrl && (isGdb || CFG.serverAncheShapefile)) {
         statoControllo("archivio", "ok");
         await controllaSulServer(file);
+        await avviaTopologia(file);
         return;
       }
       if (isGdb) {
@@ -287,6 +288,7 @@
       statoControllo("dipendenze", E.some((e) => /dipendente/.test(e.controllo)) ? "ko" : "ok");
       $("#stato-elaborazione").hidden = true;
       mostraReport(file.name, quadro, E, crsTrovati);
+      await avviaTopologia(file);
     } catch (e) {
       $("#stato-elaborazione").hidden = true;
       if (e.servizio || /fetch/i.test(e.message)) {
@@ -310,27 +312,63 @@
     if (j.error) { const e = new Error(j.error.message || "errore del servizio"); e.servizio = true; throw e; }
     return j;
   }
-  async function controllaSulServer(file) {
-    const task = CFG.gpUrl.replace(/\/+$/, ""), servizio = task.replace(/\/[^/]+$/, "");
-    ["completezza", "crs", "struttura", "valori", "dipendenze"].forEach((k) => statoControllo(k, "run"));
-    stato("Invio della fornitura al servizio di validazione regionale…");
+  // upload dello zip sul servizio, submitJob con i parametri, attesa della fine; restituisce i risultati richiesti
+  async function eseguiJob(taskUrl, file, parametri, risultati, avanzamento) {
+    const task = taskUrl.replace(/\/+$/, ""), servizio = task.replace(/\/[^/]+$/, "");
     const fd = new FormData(); fd.append("file", file);
     const up = await gp(servizio + "/uploads/upload", fd);
     const sub = new FormData();
     sub.append("fornitura", JSON.stringify({ itemID: up.item.itemID }));
-    sub.append("nome_fornitura", file.name);
+    for (const [k, v] of Object.entries(parametri)) sub.append(k, v);
     const job = await gp(task + "/submitJob", sub);
     let st = job;
-    for (let i = 0; i < 600 && !/Succeeded|Failed|Cancelled|TimedOut/.test(st.jobStatus); i++) {
-      stato(`Controllo in corso sul server (${st.jobStatus.replace("esriJob", "")})…`);
+    for (let i = 0; i < 900 && !/Succeeded|Failed|Cancelled|TimedOut/.test(st.jobStatus); i++) {
+      avanzamento(st.jobStatus.replace("esriJob", ""));
       await pausa(2000);
       st = await gp(`${task}/jobs/${job.jobId}`);
     }
-    if (st.jobStatus !== "esriJobSucceeded") throw new Error("il servizio ha restituito " + st.jobStatus);
-    const ris = await gp(`${task}/jobs/${job.jobId}/results/report_json`);
-    const pdf = await gp(`${task}/jobs/${job.jobId}/results/report_pdf`);
-    const rep = await (await fetch(ris.value.url)).json();
-    mostraDaServer(rep, file.name, pdf.value && pdf.value.url);
+    if (st.jobStatus !== "esriJobSucceeded") throw Object.assign(new Error("il servizio ha restituito " + st.jobStatus), { servizio: true });
+    const out = {};
+    for (const r of risultati) { const x = await gp(`${task}/jobs/${job.jobId}/results/${r}`); out[r] = x.value && (x.value.url || x.value); }
+    return out;
+  }
+  async function controllaSulServer(file) {
+    ["completezza", "crs", "struttura", "valori", "dipendenze"].forEach((k) => statoControllo(k, "run"));
+    stato("Invio della fornitura al servizio di validazione regionale…");
+    const r = await eseguiJob(CFG.gpUrl, file, { nome_fornitura: file.name }, ["report_json", "report_pdf"],
+      (s) => stato(`Controllo in corso sul server (${s})…`));
+    mostraDaServer(await (await fetch(r.report_json)).json(), file.name, r.report_pdf);
+  }
+
+  // controllo topologico sul web tool ValidazioneTopologiaPSC.pyt: esito separato, report PDF e pacchetto errori
+  async function avviaTopologia(file) {
+    const box = $("#esito-topologia"), id = ULTIMO && ULTIMO.id;
+    if (!CFG.topoUrl) {
+      box.innerHTML = '<div class="msg msg-info"><strong>Controllo topologico:</strong> servizio non ancora collegato a questo mockup.</div>';
+      return;
+    }
+    statoControllo("topologia", "run");
+    box.innerHTML = `<div class="msg msg-info"><strong>Controllo topologico in corso sul server…</strong> <span id="topo-stato"></span><div class="small">Può richiedere alcuni minuti: l'esito degli attributi è già salvato.</div></div>`;
+    try {
+      const r = await eseguiJob(CFG.topoUrl, file, { nome_fornitura: file.name, comune: ULTIMO.comune, formato_errori: $("#formato-errori").value },
+        ["report_json", "report_pdf", "errori_zip"], (s) => { const x = $("#topo-stato"); if (x) x.textContent = `(${s})`; });
+      const rep = await (await fetch(r.report_json)).json();
+      const topo = { esito: rep.esito, errori: rep.errori, avvisi: rep.avvisi, pdf: r.report_pdf, zip: r.errori_zip, formato: $("#formato-errori").value };
+      statoControllo("topologia", rep.errori ? "ko" : rep.avvisi ? "warn" : "ok");
+      mostraTopologia(topo);
+      if (window.SERVIZI) window.SERVIZI.aggiornaFornitura(id, { topologia: topo });
+    } catch (e) {
+      statoControllo("topologia", "ko");
+      box.innerHTML = `<div class="msg msg-warn"><strong>Controllo topologico non eseguito.</strong> Risposta del servizio: ${esc(e.message)}</div>`;
+    }
+  }
+  function mostraTopologia(t) {
+    $("#esito-topologia").innerHTML = `<div class="esito esito-sm ${t.errori ? "ko" : "ok"}"><div>
+      <div class="esito-titolo">Topologia ${t.errori ? "NON CONFORME" : "CONFORME"}</div>
+      <div class="esito-meta">${t.errori} errori, ${t.avvisi} avvisi (sovrapposizioni, buchi, sconfinamenti, geometrie)</div></div></div>
+      <div class="d-flex flex-wrap gap-2 mt-2">
+        <a class="btn btn-primary btn-sm" href="${esc(t.pdf)}" target="_blank" rel="noopener">Report topologico PDF</a>
+        <a class="btn btn-outline-primary btn-sm" href="${esc(t.zip)}">Pacchetto errori (${t.formato === "gdb" ? "File Geodatabase" : "shapefile"})</a></div>`;
   }
   // Report JSON prodotto da valida_attributi.py -> stessa visualizzazione del controllo nel browser
   function mostraDaServer(rep, nomeFile, pdfUrl) {

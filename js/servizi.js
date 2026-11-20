@@ -62,6 +62,10 @@
   }
 
   window.SERVIZI = {
+    aggiornaFornitura(id, dati) {
+      const s = leggi(), f = s.forniture.find((x) => x.id === id);
+      if (f) { Object.assign(f, dati); scrivi(s); }
+    },
     registraFornitura(f) {
       const s = leggi();
       s.forniture.unshift({ ...f, E: f.E.slice(0, MAX_SEGNALAZIONI), troncato: f.E.length > MAX_SEGNALAZIONI });
@@ -114,7 +118,7 @@
       return;
     }
     $("#lista-forniture").innerHTML = '<div class="table-responsive"><table class="table table-sm tab-report align-middle"><thead><tr><th>Data</th>' + (fc ? "" : "<th>Comune</th>") +
-      '<th>Fornitura</th><th>Formato</th><th>Sistema di riferimento</th><th>Esito</th><th class="num">Errori</th><th class="num">Avvisi</th><th></th></tr></thead><tbody>' +
+      '<th>Fornitura</th><th>Formato</th><th>Sistema di riferimento</th><th>Esito</th><th class="num">Errori</th><th class="num">Avvisi</th><th>Topologia</th><th></th></tr></thead><tbody>' +
       elenco.map((f) => `<tr>
         <td>${esc(f.data)}</td>${fc ? "" : `<td>${esc(f.comune)}</td>`}
         <td><strong>${esc(f.titolo || f.nomeFile)}</strong>${s.lavoro[f.comune] === f.id ? ' <span class="pill pill-blu">versione di lavoro</span>' : ""}
@@ -122,6 +126,9 @@
         <td>${esc(f.formato || "")}</td><td>${esc(f.crsTxt)}</td>
         <td><span class="pill ${f.nErr ? "pill-err" : "pill-ok"}">${f.nErr ? "non conforme" : "conforme"}</span></td>
         <td class="num">${f.nErr}</td><td class="num">${f.nAv}</td>
+        <td class="text-nowrap">${f.topologia ? `<span class="pill ${f.topologia.errori ? "pill-err" : "pill-ok"}">${f.topologia.errori ? "non conforme" : "conforme"}</span>
+          <a class="small" href="${esc(f.topologia.pdf)}" target="_blank" rel="noopener">PDF</a> · <a class="small" href="${esc(f.topologia.zip)}">errori</a>`
+          : '<span class="small text-muted">non eseguita</span>'}</td>
         <td class="text-end text-nowrap">
           <button class="btn btn-outline-primary btn-xs" data-pdf="${f.id}" type="button">Report PDF</button>
           ${!f.nErr && s.lavoro[f.comune] !== f.id ? `<button class="btn btn-outline-primary btn-xs" data-lavoro="${f.id}" type="button">Usa come versione di lavoro</button>` : ""}
