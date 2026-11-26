@@ -6,7 +6,7 @@
   <title>Consegna PSC/PSA – Geoportale Regione Calabria</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-italia@2.18.1/dist/css/bootstrap-italia.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-  <link rel="stylesheet" href="css/portale.css?v=20261126d">
+  <link rel="stylesheet" href="css/portale.css?v=20261126e">
 </head>
 <body>
 <a class="skip-link visually-hidden-focusable" href="#main-content">Vai al contenuto</a>
@@ -156,15 +156,8 @@
         <div class="col-lg-5">
           <div class="card card-bg shadow-sm h-100"><div class="card-body p-4">
             <fieldset class="mb-4">
-              <legend class="h6 legend-plain">Sistema di riferimento</legend>
-              <div class="form-check">
-                <input class="form-check-input" type="radio" name="crs" id="crs-7792" value="RDN2008_UTM33N" checked>
-                <label class="form-check-label" for="crs-7792">RDN2008 / UTM 33N – EPSG:7792 <span class="badge bg-success ms-1">consigliato</span></label>
-              </div>
-              <div class="form-check">
-                <input class="form-check-input" type="radio" name="crs" id="crs-32633" value="WGS84_UTM33N">
-                <label class="form-check-label" for="crs-32633">WGS84 / UTM 33N – EPSG:32633 <span class="badge bg-secondary ms-1">QTRP</span></label>
-              </div>
+              <legend class="h6 legend-plain">Template</legend>
+              <div id="lista-template-scarica" class="small text-muted">Lettura dei template dal Portal…</div>
             </fieldset>
             <fieldset class="mb-4">
               <legend class="h6 legend-plain">Formato</legend>
@@ -181,6 +174,7 @@
               <svg class="ico ico-w" viewBox="0 0 24 24"><path d="M11 3h2v10l3.5-3.5 1.4 1.4L12 16.8l-5.9-5.9 1.4-1.4L11 13V3ZM4 19h16v2H4z"/></svg>
               Scarica il template</a>
             <p id="nome-template" class="small text-muted mt-2 mb-0"></p>
+            <p class="small text-muted mt-1 mb-0">I template sono pubblicati sul Portal regionale; lo shapefile è generato dal File Geodatabase al momento del download.</p>
           </div></div>
         </div>
       </div>
@@ -472,12 +466,12 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/shpjs/3.6.3/shp.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/rbush@3.0.1/rbush.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js"></script>
-<script src="js/config.js?v=20261126d"></script>
-<script src="js/template_portal.js?v=20261126d"></script>
-<script src="js/tavole_qtrp.js?v=20261126d"></script>
-<script src="js/comuni_calabria.js?v=20261126d"></script>
-<script src="js/topologia.js?v=20261126d"></script>
-<script src="js/app.js?v=20261126d"></script>
-<script src="js/servizi.js?v=20261126d"></script>
+<script src="js/config.js?v=20261126e"></script>
+<script src="js/template_portal.js?v=20261126e"></script>
+<script src="js/tavole_qtrp.js?v=20261126e"></script>
+<script src="js/comuni_calabria.js?v=20261126e"></script>
+<script src="js/topologia.js?v=20261126e"></script>
+<script src="js/app.js?v=20261126e"></script>
+<script src="js/servizi.js?v=20261126e"></script>
 </body>
 </html>

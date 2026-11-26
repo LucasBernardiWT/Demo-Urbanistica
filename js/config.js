@@ -23,6 +23,7 @@ window.CONFIG_MOCKUP = {
   templateCartella: "",
   templateDefault: "1950a1414ba845e498a3bcf940fa6d3d",
   descriviUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/valida_attributi/GPServer/Descrivi%20template",
+  esportaShpUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/valida_attributi/GPServer/Esporta%20template%20shapefile",
   token: "",
   serverAncheShapefile: true,
 };

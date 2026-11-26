@@ -16,15 +16,53 @@
   const MAX_RIGHE_VIDEO = 500;
 
   // ---------------------------------------------------------------- 1. template
-  function aggiornaTemplate() {
-    const crs = document.querySelector("input[name=crs]:checked").value;
-    const fmt = document.querySelector("input[name=fmt]:checked").value;
-    const nome = `QTRP_PSC_Template_${crs}_${fmt}.zip`;
-    $("#btn-template").href = "download/" + nome;
-    $("#btn-template").setAttribute("download", nome);
-    $("#nome-template").textContent = nome;
+  // download del template scelto, dal Portal: il gdb e' l'item stesso, lo shapefile e' generato dal gdb
+  // con il tool "Esporta template shapefile" del servizio valida_attributi
+  const portalUrl = ((window.CONFIG_MOCKUP || {}).portalUrl || "").replace(/\/+$/, "");
+  function listaTemplateScarica() {
+    const T = window.TEMPLATE, box = $("#lista-template-scarica");
+    if (!T || !T.elenco.length) { box.textContent = T && T.errore ? "Portal non raggiungibile: " + T.errore : "Nessun template sul Portal."; return; }
+    box.className = "";
+    box.innerHTML = T.elenco.map((x) => `<div class="form-check"><input class="form-check-input" type="radio" name="tpl-scarica" id="tpl-${esc(x.id)}" value="${esc(x.id)}"${T.attivo && T.attivo.id === x.id ? " checked" : ""}>
+      <label class="form-check-label" for="tpl-${esc(x.id)}">${esc(x.titolo)}</label></div>`).join("");
+    box.querySelectorAll("input").forEach((i) => i.addEventListener("change", () => T.scegli(i.value)));
+    aggiornaTemplate();
   }
-  document.querySelectorAll("input[name=crs], input[name=fmt]").forEach((i) => i.addEventListener("change", aggiornaTemplate));
+  function aggiornaTemplate() {
+    const T = window.TEMPLATE, tpl = T && T.attivo, fmt = document.querySelector("input[name=fmt]:checked").value;
+    const b = $("#btn-template");
+    if (!tpl) { b.classList.add("disabled"); $("#nome-template").textContent = ""; return; }
+    b.classList.remove("disabled");
+    const base = tpl.titolo.replace(/_gdb$/i, "");
+    if (fmt === "gdb") {
+      b.href = `${portalUrl}/sharing/rest/content/items/${tpl.id}/data`; b.setAttribute("download", base + "_gdb.zip");
+      $("#nome-template").textContent = base + "_gdb.zip";
+    } else {
+      b.href = "#"; b.removeAttribute("download");
+      $("#nome-template").textContent = base + "_shp.zip (generato dal File Geodatabase)";
+    }
+  }
+  $("#btn-template").addEventListener("click", async (e) => {
+    const fmt = document.querySelector("input[name=fmt]:checked").value, tpl = window.TEMPLATE && window.TEMPLATE.attivo;
+    if (fmt !== "shp" || !tpl) return;
+    e.preventDefault();
+    const b = $("#btn-template"), testo = b.innerHTML;
+    b.classList.add("disabled"); b.textContent = "Preparazione dello shapefile…";
+    try {
+      const task = CFG.esportaShpUrl.replace(/\/+$/, "");
+      const fd = new FormData(); fd.append("item_template", tpl.id);
+      let st = await gp(task + "/submitJob", fd);
+      const id = st.jobId;
+      for (let i = 0; i < 150 && !/Succeeded|Failed|Cancelled|TimedOut/.test(st.jobStatus); i++) { await pausa(1500); st = await gp(`${task}/jobs/${id}`); }
+      if (st.jobStatus !== "esriJobSucceeded") throw new Error("il servizio ha restituito " + st.jobStatus);
+      const r = await gp(`${task}/jobs/${id}/results/template_shp`);
+      location.href = r.value.url;
+    } catch (x) {
+      alert("Impossibile preparare lo shapefile: " + x.message);
+    } finally { b.classList.remove("disabled"); b.innerHTML = testo; }
+  });
+  document.querySelectorAll("input[name=fmt]").forEach((i) => i.addEventListener("change", aggiornaTemplate));
+  document.addEventListener("template-cambiato", listaTemplateScarica);
   aggiornaTemplate();
 
   function tabellaTemplate() {
