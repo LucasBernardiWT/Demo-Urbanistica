@@ -1,49 +1,35 @@
-// Catalogo delle tavole del PSC/PSA dal modello logico semplificato del QTRP (Tomo IV, Allegato 2, par. 5).
-// multipla: il QTRP prevede "n Tavole riportanti i diversi tematismi" (il Comune ne crea quante servono).
-// layer: layer minimi della tavola. Derivano dalla colonna "Modello Dati Commissione SITO" del modello
-//        dettagliato (layer -> categoria del modello semplificato -> tavola). Dove una categoria contiene
-//        piu' tavole la scelta e' nostra, da confermare con la Regione: unitapaesaggio -> QAU_Tav;
-//        sottosistemiambientale -> QAI_Tav, QAD_Tav (vulnerabilita'), QAV_Tav (valori), oltre a DRN_Tav.
-//        Le tavole con layer minimi vengono generate in automatico dalla versione di lavoro.
-// tema:  campo con cui colorare il layer in quella tavola (default: prima codelist del layer).
-window.TAVOLE_QTRP = [
-  { macro: "Quadro conoscitivo – Quadro normativo e di pianificazione", tavole: [
-    { codice: "QNS_Tav", nome: "Tavola dei piani sovracomunali e dei vincoli", multipla: false, layer: [] },
-    { codice: "QNT_Tav", nome: "Tavole descrittive aree protette, beni culturali e paesaggistici", multipla: true, layer: [] },
-    { codice: "QNP_Tav", nome: "Tavole descrittive progetti integrati, PIT (eventuali)", multipla: true, layer: [] },
-    { codice: "QNC_Tav", nome: "Tavola della pianificazione comunale vigente", multipla: false, layer: ["zoneprg"] } ] },
-  { macro: "Quadro conoscitivo – Quadro ambientale", tavole: [
-    { codice: "QAI_Tav", nome: "Inventario delle risorse naturali e antropiche", multipla: true, layer: ["sottosistemiambientale"] },
-    { codice: "QAA_Tav", nome: "Studio agro-pedologico", multipla: true, layer: [] },
-    { codice: "QAG_Tav", nome: "Studio geomorfologico", multipla: true, layer: [] },
-    { codice: "QAU_Tav", nome: "Tavola delle unità di paesaggio", multipla: false, layer: ["unitapaesaggio"] },
-    { codice: "QAD_Tav", nome: "Tavola delle descrizioni delle vulnerabilità", multipla: false, layer: ["sottosistemiambientale"], tema: { sottosistemiambientale: "Vulnerab" } },
-    { codice: "QAV_Tav", nome: "Tavola dei valori", multipla: false, layer: ["sottosistemiambientale"], tema: { sottosistemiambientale: "valore" } },
-    { codice: "QAS_Tav", nome: "Tavola di sintesi delle risorse e delle criticità del sistema ambientale", multipla: false, layer: [] },
-    { codice: "QAR_Tav", nome: "Rappresentazione delle aree soggette a rischio", multipla: false, layer: ["rischi"] } ] },
-  { macro: "Quadro conoscitivo – Quadro strutturale economico e morfologico", tavole: [
-    { codice: "QSD_Tav", nome: "Dinamiche demografiche", multipla: false, layer: [] },
-    { codice: "QSE_Tav", nome: "Sistema economico", multipla: false, layer: [] },
-    { codice: "QSR_Tav", nome: "Risorse del territorio", multipla: true, layer: [] },
-    { codice: "QSI_Tav", nome: "Infrastrutture territoriali", multipla: true, layer: [] },
-    { codice: "QSV_Tav", nome: "Tavola delle identità e del paesaggio", multipla: false, layer: [] },
-    { codice: "QMI_Tav", nome: "Sistema insediativo", multipla: true, layer: [] },
-    { codice: "QMR_Tav", nome: "Sistema relazionale", multipla: true, layer: [] } ] },
-  { macro: "Quadro conoscitivo – Studi specialistici", tavole: [
-    { codice: "SSG_Tav", nome: "Indagini geologiche", multipla: true, layer: [] },
-    { codice: "SSA_Tav", nome: "Indagini agroforestali", multipla: true, layer: [] },
-    { codice: "SSE_Tav", nome: "Analisi acustica ed elettromagnetica", multipla: true, layer: [] },
-    { codice: "SSC_Tav", nome: "Analisi storica e perimetrazione dei centri storici", multipla: true, layer: [] },
-    { codice: "SSI_Tav", nome: "Analisi di immobili di particolare pregio", multipla: true, layer: [] },
-    { codice: "SSM_Tav", nome: "Mobilità, trasporti e parcheggi", multipla: true, layer: [] } ] },
-  { macro: "Documento preliminare", tavole: [
-    { codice: "PSR_Tav", nome: "Scenario di riferimento", multipla: true, layer: [] },
-    { codice: "PSM_Tav", nome: "Schema di massima", multipla: true, layer: ["sistemi"] } ] },
-  { macro: "Documento definitivo", tavole: [
-    { codice: "DSI_Tav", nome: "Sistema infrastrutturale-relazionale", multipla: true, layer: ["sottosistemirelazionale"] },
-    { codice: "DCT_Tav", nome: "Classificazione del territorio comunale", multipla: true, layer: ["macrozone"] },
-    { codice: "DRN_Tav", nome: "Risorse naturali e antropiche", multipla: true, layer: ["sottosistemiambientale"] },
-    { codice: "DCL_Tav", nome: "Condizioni limitanti", multipla: true, layer: ["classifattibilitapiano"] },
-    { codice: "DCS_Tav", nome: "Carta di sintesi", multipla: true, layer: ["modalitaintervento", "modalitauso"] },
-    { codice: "DAT_Tav", nome: "Ambiti territoriali unitari", multipla: true, layer: ["componentiatu"] } ] },
-];
+// Catalogo delle tavole del PSC/PSA: non e' scritto nel codice, si legge da regole_tavole_qtrp.json
+// (sorgente in 3 - Scripts/regole_tavole_qtrp.json). Ordine di lettura:
+//   1. item del Portal indicato in CONFIG_MOCKUP.tavoleItem (il JSON, oppure uno zip che lo contiene:
+//      il Portal rifiuta i .json caricati come GeoJSON);
+//   2. copia locale js/regole_tavole_qtrp.json, se l'item non e' indicato o non e' raggiungibile.
+// Espone window.TAVOLE_QTRP (macro -> tavole) e la promessa window.TAVOLE_PRONTE.
+(function () {
+  "use strict";
+  const CFG = window.CONFIG_MOCKUP || {};
+
+  async function leggi(url) {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const buf = await r.arrayBuffer(), b = new Uint8Array(buf);
+    if (b[0] === 0x50 && b[1] === 0x4b) { // "PK": zip
+      const zip = await JSZip.loadAsync(buf);
+      const f = Object.values(zip.files).find((x) => !x.dir && /\.json$/i.test(x.name));
+      if (!f) throw new Error("nessun JSON nello zip");
+      return JSON.parse(await f.async("string"));
+    }
+    return JSON.parse(new TextDecoder("utf-8").decode(buf));
+  }
+
+  const portal = (CFG.portalUrl || "https://geohub-coll.regione.calabria.it/portal").replace(/\/+$/, "");
+  window.TAVOLE_PRONTE = (async () => {
+    let dati = null;
+    if (CFG.tavoleItem) {
+      try { dati = await leggi(`${portal}/sharing/rest/content/items/${CFG.tavoleItem}/data`); }
+      catch (e) { console.warn("Catalogo tavole dal Portal non disponibile, uso la copia locale:", e.message); }
+    }
+    if (!dati) dati = await leggi("js/regole_tavole_qtrp.json?v=" + Date.now());
+    window.TAVOLE_QTRP = dati.macro.map((m) => ({ macro: m.nome, tavole: m.tavole }));
+    return window.TAVOLE_QTRP;
+  })();
+})();

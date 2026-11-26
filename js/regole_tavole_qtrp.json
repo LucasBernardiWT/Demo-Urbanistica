@@ -1,0 +1,266 @@
+{
+  "_nota": "Catalogo delle tavole del PSC/PSA dal modello logico semplificato del QTRP (Tomo IV, Allegato 2, par. 5). Si aggiorna qui (item del Portal), senza toccare il codice. macro: macro categoria; codice/nome: tavola; multipla: il Comune ne puo' creare piu' d'una ('n Tavole'); layer: layer minimi (nomi come nel template gdb), da cui la generazione automatica dalla versione di lavoro; tema: per layer, campo con cui colorarlo nella tavola (default: prima codelist del layer). Layer minimi ricavati dalla colonna 'Modello Dati Commissione SITO' del modello dettagliato; dove una categoria contiene piu' tavole la scelta e' nostra, da confermare con la Regione.",
+  "macro": [
+    {
+      "nome": "Quadro conoscitivo – Quadro normativo e di pianificazione",
+      "tavole": [
+        {
+          "codice": "QNS_Tav",
+          "nome": "Tavola dei piani sovracomunali e dei vincoli",
+          "multipla": false,
+          "layer": []
+        },
+        {
+          "codice": "QNT_Tav",
+          "nome": "Tavole descrittive aree protette, beni culturali e paesaggistici",
+          "multipla": true,
+          "layer": []
+        },
+        {
+          "codice": "QNP_Tav",
+          "nome": "Tavole descrittive progetti integrati, PIT (eventuali)",
+          "multipla": true,
+          "layer": []
+        },
+        {
+          "codice": "QNC_Tav",
+          "nome": "Tavola della pianificazione comunale vigente",
+          "multipla": false,
+          "layer": [
+            "zoneprg"
+          ]
+        }
+      ]
+    },
+    {
+      "nome": "Quadro conoscitivo – Quadro ambientale",
+      "tavole": [
+        {
+          "codice": "QAI_Tav",
+          "nome": "Inventario delle risorse naturali e antropiche",
+          "multipla": true,
+          "layer": [
+            "sottosistemiambientale"
+          ]
+        },
+        {
+          "codice": "QAA_Tav",
+          "nome": "Studio agro-pedologico",
+          "multipla": true,
+          "layer": []
+        },
+        {
+          "codice": "QAG_Tav",
+          "nome": "Studio geomorfologico",
+          "multipla": true,
+          "layer": []
+        },
+        {
+          "codice": "QAU_Tav",
+          "nome": "Tavola delle unità di paesaggio",
+          "multipla": false,
+          "layer": [
+            "unitapaesaggio"
+          ]
+        },
+        {
+          "codice": "QAD_Tav",
+          "nome": "Tavola delle descrizioni delle vulnerabilità",
+          "multipla": false,
+          "layer": [
+            "sottosistemiambientale"
+          ],
+          "tema": {
+            "sottosistemiambientale": "Vulnerab"
+          }
+        },
+        {
+          "codice": "QAV_Tav",
+          "nome": "Tavola dei valori",
+          "multipla": false,
+          "layer": [
+            "sottosistemiambientale"
+          ],
+          "tema": {
+            "sottosistemiambientale": "valore"
+          }
+        },
+        {
+          "codice": "QAS_Tav",
+          "nome": "Tavola di sintesi delle risorse e delle criticità del sistema ambientale",
+          "multipla": false,
+          "layer": []
+        },
+        {
+          "codice": "QAR_Tav",
+          "nome": "Rappresentazione delle aree soggette a rischio",
+          "multipla": false,
+          "layer": [
+            "rischi"
+          ]
+        }
+      ]
+    },
+    {
+      "nome": "Quadro conoscitivo – Quadro strutturale economico e morfologico",
+      "tavole": [
+        {
+          "codice": "QSD_Tav",
+          "nome": "Dinamiche demografiche",
+          "multipla": false,
+          "layer": []
+        },
+        {
+          "codice": "QSE_Tav",
+          "nome": "Sistema economico",
+          "multipla": false,
+          "layer": []
+        },
+        {
+          "codice": "QSR_Tav",
+          "nome": "Risorse del territorio",
+          "multipla": true,
+          "layer": []
+        },
+        {
+          "codice": "QSI_Tav",
+          "nome": "Infrastrutture territoriali",
+          "multipla": true,
+          "layer": []
+        },
+        {
+          "codice": "QSV_Tav",
+          "nome": "Tavola delle identità e del paesaggio",
+          "multipla": false,
+          "layer": []
+        },
+        {
+          "codice": "QMI_Tav",
+          "nome": "Sistema insediativo",
+          "multipla": true,
+          "layer": []
+        },
+        {
+          "codice": "QMR_Tav",
+          "nome": "Sistema relazionale",
+          "multipla": true,
+          "layer": []
+        }
+      ]
+    },
+    {
+      "nome": "Quadro conoscitivo – Studi specialistici",
+      "tavole": [
+        {
+          "codice": "SSG_Tav",
+          "nome": "Indagini geologiche",
+          "multipla": true,
+          "layer": []
+        },
+        {
+          "codice": "SSA_Tav",
+          "nome": "Indagini agroforestali",
+          "multipla": true,
+          "layer": []
+        },
+        {
+          "codice": "SSE_Tav",
+          "nome": "Analisi acustica ed elettromagnetica",
+          "multipla": true,
+          "layer": []
+        },
+        {
+          "codice": "SSC_Tav",
+          "nome": "Analisi storica e perimetrazione dei centri storici",
+          "multipla": true,
+          "layer": []
+        },
+        {
+          "codice": "SSI_Tav",
+          "nome": "Analisi di immobili di particolare pregio",
+          "multipla": true,
+          "layer": []
+        },
+        {
+          "codice": "SSM_Tav",
+          "nome": "Mobilità, trasporti e parcheggi",
+          "multipla": true,
+          "layer": []
+        }
+      ]
+    },
+    {
+      "nome": "Documento preliminare",
+      "tavole": [
+        {
+          "codice": "PSR_Tav",
+          "nome": "Scenario di riferimento",
+          "multipla": true,
+          "layer": []
+        },
+        {
+          "codice": "PSM_Tav",
+          "nome": "Schema di massima",
+          "multipla": true,
+          "layer": [
+            "sistemi"
+          ]
+        }
+      ]
+    },
+    {
+      "nome": "Documento definitivo",
+      "tavole": [
+        {
+          "codice": "DSI_Tav",
+          "nome": "Sistema infrastrutturale-relazionale",
+          "multipla": true,
+          "layer": [
+            "sottosistemirelazionale"
+          ]
+        },
+        {
+          "codice": "DCT_Tav",
+          "nome": "Classificazione del territorio comunale",
+          "multipla": true,
+          "layer": [
+            "macrozone"
+          ]
+        },
+        {
+          "codice": "DRN_Tav",
+          "nome": "Risorse naturali e antropiche",
+          "multipla": true,
+          "layer": [
+            "sottosistemiambientale"
+          ]
+        },
+        {
+          "codice": "DCL_Tav",
+          "nome": "Condizioni limitanti",
+          "multipla": true,
+          "layer": [
+            "classifattibilitapiano"
+          ]
+        },
+        {
+          "codice": "DCS_Tav",
+          "nome": "Carta di sintesi",
+          "multipla": true,
+          "layer": [
+            "modalitaintervento",
+            "modalitauso"
+          ]
+        },
+        {
+          "codice": "DAT_Tav",
+          "nome": "Ambiti territoriali unitari",
+          "multipla": true,
+          "layer": [
+            "componentiatu"
+          ]
+        }
+      ]
+    }
+  ]
+}

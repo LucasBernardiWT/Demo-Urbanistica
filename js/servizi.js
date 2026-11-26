@@ -1,12 +1,14 @@
 // Area PSC/PSA: navigazione fra i servizi, storico forniture, composizione e gestione tavole, invio.
 // Nel mockup lo stato e' nel browser: metadati in localStorage, zip delle forniture in IndexedDB
 // (servono a mostrare le tavole sulla mappa). Nel servizio reale starebbero sul server regionale.
-(function () {
+// parte quando il catalogo delle tavole (js/tavole_qtrp.js) e' stato letto
+window.TAVOLE_PRONTE.then(function () {
   "use strict";
   const $ = (s) => document.querySelector(s);
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const LAYER = window.REGOLE_QTRP.layer.map((l) => l.nome);
   const CAT = window.TAVOLE_QTRP;
+  { const n = document.getElementById("n-tavole-minime"); if (n) n.textContent = CAT.flatMap((g) => g.tavole).filter((t) => t.layer.length).length; }
   const TAV = Object.fromEntries(CAT.flatMap((g) => g.tavole.map((t) => [t.codice, { ...t, macro: g.macro }])));
   // nei filtri compaiono solo i Comuni con forniture caricate (l'elenco completo serve solo al caricamento)
   const comuniConDati = () => [...new Set(leggi().forniture.map((f) => f.comune))].sort((a, b) => a.localeCompare(b, "it"));
@@ -464,4 +466,4 @@
 
   popolaComuni();
   vai();
-})();
+});

@@ -6,11 +6,15 @@
 // topoUrl: URL del task del web tool "Valida topologia" (3 - Scripts/ValidazioneTopologia.pyt); vuoto = non collegato.
 //   Gli shapefile sono controllati nel browser (js/topologia.js); il servizio serve per i File Geodatabase.
 // Template e regole dei due servizi sono item del Portal: si aggiornano li', senza toccare il mockup.
+// tavoleItem: item del Portal con regole_tavole_qtrp.json (catalogo tavole e layer minimi); vuoto = copia locale
+//   js/regole_tavole_qtrp.json. portalUrl: Portal da cui leggere l'item.
 // token: token ArcGIS se i servizi non sono pubblici (vuoto se condivisi con tutti).
 // serverAncheShapefile: true = anche gli shapefile vengono controllati sul server invece che nel browser.
 window.CONFIG_MOCKUP = {
   gpUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/valida_attributi/GPServer/Valida%20attributi",
   topoUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/valida_topologia/GPServer/Valida%20topologia",
+  portalUrl: "https://geohub-coll.regione.calabria.it/portal",
+  tavoleItem: "ec041abfa08946c1a00aef046fb87886",
   token: "",
   serverAncheShapefile: false,
 };
