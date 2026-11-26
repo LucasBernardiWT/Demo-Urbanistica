@@ -1,9 +1,9 @@
 // Mockup "Consegna PSC/PSA" del Geoportale Regione Calabria.
-// Il controllo degli shapefile gira nel browser e applica le regole esportate dal gdb template
-// (js/regole_qtrp.js, generato da esporta_regole_js.py): stesse regole di valida_attributi.py.
+// I controlli girano sui servizi regionali con il template scelto (item del Portal); la struttura del template
+// (window.REGOLE_QTRP) arriva da js/template_portal.js. Il controllo nel browser resta solo come riserva.
 (function () {
   "use strict";
-  const R = window.REGOLE_QTRP;
+  let R = window.REGOLE_QTRP;
   const $ = (s) => document.querySelector(s);
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
@@ -43,6 +43,21 @@
     $("#tabella-template").innerHTML = h + "</tbody></table>";
   }
   tabellaTemplate();
+
+  // menu dei template sotto "Strumento": elenco e struttura dal Portal; al cambio si aggiornano tabelle e servizi
+  function menuTemplate() {
+    const T = window.TEMPLATE, sel = $("#template-rif");
+    if (!sel || !T) return;
+    if (T.errore && !T.elenco.length) { sel.innerHTML = "<option>Portal non raggiungibile</option>"; sel.disabled = true; $("#template-info").textContent = T.errore; return; }
+    sel.innerHTML = T.elenco.map((x) => `<option value="${esc(x.id)}">${esc(x.titolo)}</option>`).join("");
+    if (T.attivo) sel.value = T.attivo.id;
+    sel.disabled = false;
+    const m = window.REGOLE_QTRP;
+    $("#template-info").textContent = m && m.layer.length ? `${m.layer.length} layer · ${m.crs || ""}${m.epsg ? " (EPSG:" + m.epsg + ")" : ""}` : "";
+  }
+  document.addEventListener("template-caricamento", () => { $("#template-info").textContent = "Lettura della struttura del template…"; $("#template-rif").disabled = true; });
+  document.addEventListener("template-cambiato", () => { R = window.REGOLE_QTRP; tabellaTemplate(); menuTemplate(); });
+  $("#template-rif").addEventListener("change", (e) => window.TEMPLATE.scegli(e.target.value).catch((x) => { $("#template-info").textContent = x.message; $("#template-rif").disabled = false; }));
   document.querySelectorAll("[data-toggle-target]").forEach((b) =>
     b.addEventListener("click", () => {
       const t = document.getElementById(b.dataset.toggleTarget);
@@ -337,7 +352,9 @@
   async function controllaSulServer(file) {
     ["completezza", "crs", "struttura", "valori", "dipendenze"].forEach((k) => statoControllo(k, "run"));
     stato("Invio della fornitura al servizio di validazione regionale…");
-    const r = await eseguiJob(CFG.gpUrl, file, { nome_fornitura: file.name }, ["report_json_testo", "report_pdf_b64"],
+    const tpl = window.TEMPLATE && window.TEMPLATE.attivo, par = { nome_fornitura: file.name };
+    if (tpl) par.item_template = tpl.id;
+    const r = await eseguiJob(CFG.gpUrl, file, par, ["report_json_testo", "report_pdf_b64"],
       (s) => stato(`Controllo in corso sul server (${s})…`));
     mostraDaServer(daJson(r.report_json_testo), file.name, null);
   }
@@ -463,7 +480,8 @@
     ULTIMO = { titolo: $("#titolo-fornitura").value.trim(), nomeFile, quadro, E, nErr, nAv, comune: comuneValido() || $("#comune").value.trim(), strumento: $("#strumento").value,
       data: new Date().toLocaleString("it-IT", { dateStyle: "short", timeStyle: "short" }),
       crsTxt: unico ? unico.nome : crs.size ? "non omogeneo" : "non rilevato",
-      formato: /gdb/i.test(nomeFile) ? "gdb" : "shapefile", id: "PSC-" + Date.now().toString(36).toUpperCase() };
+      formato: /gdb/i.test(nomeFile) ? "gdb" : "shapefile", id: "PSC-" + Date.now().toString(36).toUpperCase(),
+      template: window.TEMPLATE && window.TEMPLATE.attivo ? { id: window.TEMPLATE.attivo.id, titolo: window.TEMPLATE.attivo.titolo } : null };
     if (window.SERVIZI) window.SERVIZI.registraFornitura(ULTIMO);
 
     attesa("Attributi controllati. Avvio del controllo topologico…");

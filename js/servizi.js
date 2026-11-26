@@ -2,11 +2,13 @@
 // Nel mockup lo stato e' nel browser: metadati in localStorage, zip delle forniture in IndexedDB
 // (servono a mostrare le tavole sulla mappa). Nel servizio reale starebbero sul server regionale.
 // parte quando il catalogo delle tavole (js/tavole_qtrp.js) e' stato letto
-window.TAVOLE_PRONTE.then(function () {
+Promise.all([window.TAVOLE_PRONTE, window.MODELLO_PRONTO]).then(function () {
   "use strict";
   const $ = (s) => document.querySelector(s);
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-  const LAYER = window.REGOLE_QTRP.layer.map((l) => l.nome);
+  // layer del template attivo (js/template_portal.js): si aggiornano quando l'utente cambia template
+  let LAYER = window.REGOLE_QTRP.layer.map((l) => l.nome);
+  document.addEventListener("template-cambiato", () => { LAYER = window.REGOLE_QTRP.layer.map((l) => l.nome); vai(); });
   const CAT = window.TAVOLE_QTRP;
   { const n = document.getElementById("n-tavole-minime"); if (n) n.textContent = CAT.flatMap((g) => g.tavole).filter((t) => t.layer.length).length; }
   const TAV = Object.fromEntries(CAT.flatMap((g) => g.tavole.map((t) => [t.codice, { ...t, macro: g.macro }])));

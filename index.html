@@ -6,7 +6,7 @@
   <title>Consegna PSC/PSA – Geoportale Regione Calabria</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-italia@2.18.1/dist/css/bootstrap-italia.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-  <link rel="stylesheet" href="css/portale.css?v=20261126c">
+  <link rel="stylesheet" href="css/portale.css?v=20261126d">
 </head>
 <body>
 <a class="skip-link visually-hidden-focusable" href="#main-content">Vai al contenuto</a>
@@ -218,6 +218,9 @@
             <div class="col-md-5">
               <label for="strumento" class="form-label-plain">Strumento</label>
               <select id="strumento" class="form-select form-select-sm"><option>PSC</option><option>PSA</option><option>Variante PSC</option></select>
+              <label for="template-rif" class="form-label-plain mt-2">Template di riferimento</label>
+              <select id="template-rif" class="form-select form-select-sm" disabled><option>Lettura dal Portal…</option></select>
+              <div id="template-info" class="small text-muted mt-1"></div>
             </div>
             <div class="col-md-7">
               <label for="comune" class="form-label-plain">Comune di appartenenza</label>
@@ -469,12 +472,12 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/shpjs/3.6.3/shp.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/rbush@3.0.1/rbush.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js"></script>
-<script src="js/config.js?v=20261126c"></script>
-<script src="js/regole_qtrp.js?v=20261126c"></script>
-<script src="js/tavole_qtrp.js?v=20261126c"></script>
-<script src="js/comuni_calabria.js?v=20261126c"></script>
-<script src="js/topologia.js?v=20261126c"></script>
-<script src="js/app.js?v=20261126c"></script>
-<script src="js/servizi.js?v=20261126c"></script>
+<script src="js/config.js?v=20261126d"></script>
+<script src="js/template_portal.js?v=20261126d"></script>
+<script src="js/tavole_qtrp.js?v=20261126d"></script>
+<script src="js/comuni_calabria.js?v=20261126d"></script>
+<script src="js/topologia.js?v=20261126d"></script>
+<script src="js/app.js?v=20261126d"></script>
+<script src="js/servizi.js?v=20261126d"></script>
 </body>
 </html>
