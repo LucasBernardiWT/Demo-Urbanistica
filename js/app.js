@@ -337,11 +337,12 @@
   async function controllaSulServer(file) {
     ["completezza", "crs", "struttura", "valori", "dipendenze"].forEach((k) => statoControllo(k, "run"));
     stato("Invio della fornitura al servizio di validazione regionale…");
-    // uscite testuali: la cartella dei job non e' raggiungibile da geohub-coll
     const r = await eseguiJob(CFG.gpUrl, file, { nome_fornitura: file.name }, ["report_json_testo", "report_pdf_b64"],
       (s) => stato(`Controllo in corso sul server (${s})…`));
-    mostraDaServer(JSON.parse(r.report_json_testo), file.name, null);
+    mostraDaServer(daJson(r.report_json_testo), file.name, null);
   }
+  // il server restituisce il JSON testuale gia' interpretato come oggetto: si accettano entrambe le forme
+  const daJson = (v) => (typeof v === "string" ? JSON.parse(v) : v);
   const daBase64 = (s, tipo) => new Blob([Uint8Array.from(atob(s), (c) => c.charCodeAt(0))], { type: tipo });
 
   // il calcolo gira in un Web Worker: la pagina resta reattiva e mostra l'avanzamento
@@ -372,7 +373,7 @@
         attesa("Attributi controllati. Controllo topologico in corso sul server, può richiedere alcuni minuti…");
         const r = await eseguiJob(CFG.topoUrl, file, { nome_fornitura: file.name, comune: u.comune, formato_errori: formato },
           ["report_json_testo", "report_pdf_b64", "errori_zip_b64"], (s) => fase(`(${s})`));
-        rep = JSON.parse(r.report_json_testo);
+        rep = daJson(r.report_json_testo);
         pdf = daBase64(r.report_pdf_b64, "application/pdf"); zip = daBase64(r.errori_zip_b64, "application/zip");
       } else {
         statoControllo("topologia", "warn");
