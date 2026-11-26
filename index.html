@@ -6,7 +6,7 @@
   <title>Consegna PSC/PSA – Geoportale Regione Calabria</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-italia@2.18.1/dist/css/bootstrap-italia.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-  <link rel="stylesheet" href="css/portale.css?v=20261126b">
+  <link rel="stylesheet" href="css/portale.css?v=20261126c">
 </head>
 <body>
 <a class="skip-link visually-hidden-focusable" href="#main-content">Vai al contenuto</a>
@@ -232,8 +232,8 @@
             <div class="col-md-7">
               <label for="formato-errori" class="form-label-plain">Pacchetto degli errori topologici</label>
               <select id="formato-errori" class="form-select form-select-sm">
-                <option value="shp">Shapefile</option><option value="gdb">File Geodatabase (servizio regionale)</option></select>
-              <div class="small text-muted mt-1">Gli shapefile sono controllati nel browser e il pacchetto è in shapefile; il File Geodatabase richiede il servizio regionale.</div>
+                <option value="shp">Shapefile</option><option value="gdb">File Geodatabase</option></select>
+              <div class="small text-muted mt-1">Shapefile e File Geodatabase sono controllati dai servizi regionali, con le regole del template di riferimento pubblicato sul Portal.</div>
             </div>
           </div>
           <span class="form-label-plain">Archivio .zip</span>
@@ -274,7 +274,7 @@
             <h3 class="h6">Cosa viene controllato</h3>
             <ul class="lista-controlli" id="lista-controlli">
               <li data-k="archivio">Lettura dell'archivio</li>
-              <li data-k="completezza">Completezza: tutti gli 11 layer</li>
+              <li data-k="completezza">Completezza: tutti i layer del template</li>
               <li data-k="crs">Sistema di riferimento</li>
               <li data-k="struttura">Struttura dei campi</li>
               <li data-k="valori">Compilazione e codelist</li>
@@ -284,7 +284,7 @@
             <hr>
             <p class="small mb-2"><strong>Forniture di esempio</strong>:</p>
             <ul class="small mb-0">
-              <li><a href="demo/Comune_Demo_Conforme_shp.zip" download>Fornitura dimostrativa conforme</a> <span class="text-muted">– Comune Lamezia Terme, controllo in pochi secondi</span></li>
+              <li><a href="demo/Comune_Demo_Conforme_shp.zip" download>Fornitura dimostrativa conforme</a> <span class="text-muted">– Comune Lamezia Terme, controllo in circa un minuto e mezzo</span></li>
               <li><a href="demo/Lamezia_Terme_PSC_shp.zip" download>Lamezia Terme – PSC</a> <span class="text-muted">– attributi conformi, errori topologici (circa 5 minuti)</span></li>
               <li><a href="demo/Comune_Prova_con_errori_shp.zip" download>Comune di prova</a> <span class="text-muted">– errori negli attributi</span></li>
             </ul>
@@ -469,12 +469,12 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/shpjs/3.6.3/shp.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/rbush@3.0.1/rbush.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js"></script>
-<script src="js/config.js?v=20261126b"></script>
-<script src="js/regole_qtrp.js?v=20261126b"></script>
-<script src="js/tavole_qtrp.js?v=20261126b"></script>
-<script src="js/comuni_calabria.js?v=20261126b"></script>
-<script src="js/topologia.js?v=20261126b"></script>
-<script src="js/app.js?v=20261126b"></script>
-<script src="js/servizi.js?v=20261126b"></script>
+<script src="js/config.js?v=20261126c"></script>
+<script src="js/regole_qtrp.js?v=20261126c"></script>
+<script src="js/tavole_qtrp.js?v=20261126c"></script>
+<script src="js/comuni_calabria.js?v=20261126c"></script>
+<script src="js/topologia.js?v=20261126c"></script>
+<script src="js/app.js?v=20261126c"></script>
+<script src="js/servizi.js?v=20261126c"></script>
 </body>
 </html>

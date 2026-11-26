@@ -420,7 +420,7 @@ window.TAVOLE_PRONTE.then(function () {
     return [
       [!!l && statoUso(l).ok, "Versione di lavoro conforme (attributi e topologia)", l ? `${l.nomeFile} (${l.data})${statoUso(l).motivo ? " – " + statoUso(l).motivo : ""}` : "nessuna fornitura conforme selezionata"],
       [b.length > 0, "Tavole in bozza da inviare", `${b.length} tavole`],
-      [!fuori.length, "Ogni layer compare in almeno una tavola", fuori.length ? "mancano: " + fuori.join(", ") : "tutti gli 11 layer"],
+      [!fuori.length, "Ogni layer compare in almeno una tavola", fuori.length ? "mancano: " + fuori.join(", ") : `tutti i ${LAYER.length} layer`],
       [b.length > 0 && !senzaPdf.length, "PDF caricato per ogni tavola", senzaPdf.length ? "mancano: " + senzaPdf.join(", ") : ""],
       [b.length > 0 && !nonValide.length, "Tavole valide", nonValide.length ? "non valide: " + nonValide.join(", ") : ""],
     ];

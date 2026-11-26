@@ -16,5 +16,5 @@ window.CONFIG_MOCKUP = {
   portalUrl: "https://geohub-coll.regione.calabria.it/portal",
   tavoleItem: "ec041abfa08946c1a00aef046fb87886",
   token: "",
-  serverAncheShapefile: false,
+  serverAncheShapefile: true,
 };
