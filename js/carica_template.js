@@ -162,7 +162,7 @@
       p(true, archivio.nome);
 
       p = passo("Controllo, struttura e caricamento sul Portal (UploadTemplate)");
-      let st = await gp(task + "/submitJob", { template: JSON.stringify({ itemID: up.item.itemID }), titolo, note: $("#tpl-note").value.trim(), ambito: $("#tpl-ambito").value,
+      let st = await gp(task + "/submitJob", { template: JSON.stringify({ itemID: up.item.itemID }), titolo, note: $("#tpl-note").value.trim(), ambito: $("#tpl-ambito").value, epsg: CFG.crsTemplate,
         token: sessione.token, cartella_portal: $("#tpl-cartella-portal").value, condivisione: $("#tpl-condivisione").value,
         gruppi: [...$("#tpl-gruppi").selectedOptions].map((o) => o.value).join(","), solo_verifica: "false" });
       const id = st.jobId;
