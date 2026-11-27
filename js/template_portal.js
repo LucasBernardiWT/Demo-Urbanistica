@@ -29,9 +29,15 @@
     if (j.error) throw new Error(j.error.message);
     const filtro = norm(CFG.templateFiltro || "template");
     const ambito = `ambito:${CFG.ambitoPagina || "psc"}`;
-    return (j.results || []).filter((x) => (x.tags || []).includes(ambito)
+    // un template nuovo senza regole topologiche non si puo' usare per validare: ai Comuni non si mostra,
+    // alla Regione (sessione di amministrazione aperta) si mostra come "regole da definire"
+    let regione = false;
+    try { const a = JSON.parse(sessionStorage.getItem("psc-admin")); regione = !!(a && a.scade > Date.now()); } catch (e) { /* nessuna sessione */ }
+    const nuovo = (x) => (x.tags || []).includes(ambito), conRegole = (x) => (x.tags || []).some((t) => t.startsWith("regole:"));
+    return (j.results || []).filter((x) => (nuovo(x) && (conRegole(x) || regione))
         || (!(x.tags || []).some((t) => t.startsWith("ambito:")) && norm(x.title).includes(filtro)))
-      .map((x) => ({ id: x.id, titolo: x.title, modificato: x.modified, creato: x.created, note: x.snippet || "", proprietario: x.owner }));
+      .map((x) => ({ id: x.id, titolo: x.title, modificato: x.modified, creato: x.created, note: x.snippet || "", proprietario: x.owner,
+                     daCompletare: nuovo(x) && !conRegole(x) }));
   }
 
   async function gp(url, body) {

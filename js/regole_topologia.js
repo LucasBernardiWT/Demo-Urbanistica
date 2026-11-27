@@ -22,7 +22,7 @@
                 ["cuspide_angolo_gradi", "Angolo massimo di una cuspide (°)", "Vertici con angolo più acuto sono cuspidi."]];
   const LIV = [["copertura_fuori_tolleranza", "Territorio non coperto (buchi)"], ["contenimento_fuori_tolleranza", "Sconfinamento dal limite comunale"],
                ["multiparte", "Poligono multiparte"], ["cuspide", "Cuspide"]];
-  let sessione = null, templateRif = [], stato = null; // stato: { item, struttura, base }
+  let sessione = null, templateRif = [], stato = null; // stato: { item, base, usate, template }
 
   function leggiSessione() {
     try { const s = JSON.parse(sessionStorage.getItem("psc-admin")); return s && s.scade > Date.now() ? s : null; } catch (e) { return null; }
@@ -60,7 +60,7 @@
     try {
       const [regole, tpl] = await Promise.all([cerca(`tags:"${CFG.regoleTag}"`),
         cerca(`type:"File Geodatabase" AND (tags:"${CFG.templateTag}" OR tags:"psc-template")`)]);
-      templateRif = tpl.filter((t) => tagVal(t.tags, "struttura")).map((t) => ({ id: t.id, titolo: t.title, struttura: tagVal(t.tags, "struttura"), regole: tagVal(t.tags, "regole") }));
+      templateRif = tpl.filter((t) => tagVal(t.tags, "struttura")).map((t) => ({ id: t.id, titolo: t.title, struttura: tagVal(t.tags, "struttura"), regole: tagVal(t.tags, "regole"), ambito: tagVal(t.tags, "ambito"), proprietario: t.owner }));
       $("#rt-template").innerHTML = `<option value="">— nessuno: layer delle regole —</option>` + templateRif.map((t) => `<option value="${t.struttura}">${esc(t.titolo)}</option>`).join("");
       if (!regole.length) { $("#rt-elenco").innerHTML = `<p class="small text-muted">Nessun file di regole sul Portal: creane uno con “Nuove regole”.</p>`; return; }
       $("#rt-elenco").innerHTML = `<div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Regole</th><th>Ambito</th><th>Modificate</th><th>Usate da</th><th></th></tr></thead><tbody>` +
@@ -84,11 +84,13 @@
     try {
       const base = item ? await leggiJson(item.id) : JSON.parse(JSON.stringify(CFG.regoleNuove || {}));
       if (!base.strati) base.strati = {};
-      stato = { item: item && !duplica ? item.id : null, base, usate: item ? templateRif.filter((t) => t.regole === item.id) : [] };
+      stato = { item: item && !duplica ? item.id : null, base, usate: item ? templateRif.filter((t) => t.regole === item.id) : [], template: perTemplate || null };
       $("#rt-titolo").value = item ? (duplica ? item.title + " (copia)" : item.title) : "";
       $("#rt-note").value = item ? (item.snippet || "") : "";
       $("#rt-ambito").value = item ? tagVal(item.tags, "ambito") || CFG.ambitoPagina : CFG.ambitoPagina;
-      $("#rt-template").value = "";
+      $("#rt-template").value = perTemplate ? perTemplate.struttura : "";
+      if (perTemplate) { $("#rt-titolo").value = `Regole topologiche ${perTemplate.titolo}`; $("#rt-ambito").value = perTemplate.ambito || CFG.ambitoPagina; }
+      $("#rt-salva").textContent = perTemplate ? `Salva e associa a “${perTemplate.titolo}”` : "Salva sul Portal";
       $("#rt-intestazione").textContent = stato.item ? `Modifica: ${item.title}` : (item ? `Nuove regole (copia di ${item.title})` : "Nuove regole");
       $("#rt-avviso").innerHTML = stato.item && stato.usate.length
         ? `<div class="msg msg-warn">Queste regole sono usate da ${stato.usate.map((t) => `<strong>${esc(t.titolo)}</strong>`).join(", ")}: la modifica vale per le
@@ -182,6 +184,20 @@
       }
       const item = (await gp(`${task}/jobs/${id}/results/item_regole_out`, {})).value;
       li.innerHTML = `Controllo e salvataggio <span class="text-success">fatto – regole ${stato.item ? "aggiornate" : "create"} (item ${esc(item)})</span>`;
+      if (stato.template) { // percorso guidato da "Carica template": associa subito le regole al template
+        const li2 = document.createElement("li"); $("#rt-passi").appendChild(li2);
+        li2.innerHTML = `Associazione a “${esc(stato.template.titolo)}” (AssociaRegoleTopologia) <span class="text-muted">…</span>`;
+        try {
+          const t2 = CFG.associaRegoleUrl.replace(/\/+$/, "");
+          let s2 = await gp(t2 + "/submitJob", { item_template: stato.template.id, item_regole: item, token: sessione.token });
+          for (let i = 0; i < 100 && !/Succeeded|Failed|Cancelled|TimedOut/.test(s2.jobStatus); i++) { await pausa(2000); s2 = await gp(`${t2}/jobs/${s2.jobId}`, {}); }
+          if (s2.jobStatus !== "esriJobSucceeded") throw new Error((s2.messages || []).filter((x) => /Error/.test(x.type) && !/^Failed/.test(x.description)).map((x) => x.description.trim()).join(" · ") || s2.jobStatus);
+          li2.innerHTML = `Associazione a “${esc(stato.template.titolo)}” <span class="text-success">fatto – il template è completo</span>`;
+          perTemplate = null; history.replaceState(null, "", "#/regole-topologia");
+        } catch (e) {
+          li2.innerHTML = `Associazione a “${esc(stato.template.titolo)}” <span class="text-danger">errore – ${esc(e.message)}</span> (le regole sono salvate: puoi associarle da <a href="#/template-regole">Template e regole topologiche</a>)`;
+        }
+      }
       $("#rt-editor").hidden = true; stato = null;
       await elenco();
     } catch (e) {
@@ -195,7 +211,18 @@
   $("#rt-aggiungi").onclick = aggiungiLayer;
   $("#rt-predefinite").onclick = predefinite;
   $("#rt-salva").onclick = salva;
-  $("#rt-annulla").onclick = () => { $("#rt-editor").hidden = true; stato = null; };
-  const vista = () => { if (location.hash === "#/regole-topologia") elenco(); };
+  $("#rt-annulla").onclick = () => { $("#rt-editor").hidden = true; stato = null; perTemplate = null; $("#rt-salva").textContent = "Salva sul Portal"; };
+  // "#/regole-topologia/<id del template>": percorso guidato da "Carica template" (regole nuove per quel template)
+  let perTemplate = null;
+  const vista = async () => {
+    const m = location.hash.match(/^#\/regole-topologia(?:\/([0-9a-f]{32}))?$/);
+    if (!m) return;
+    await elenco();
+    if (m[1] && sessione) {
+      perTemplate = templateRif.find((t) => t.id === m[1]) || null;
+      if (perTemplate) await apri(null, false);
+      else $("#rt-passi").innerHTML = `<li class="text-danger">Template ${esc(m[1])} non trovato tra quelli accessibili.</li>`;
+    }
+  };
   window.addEventListener("hashchange", vista); vista();
 })();

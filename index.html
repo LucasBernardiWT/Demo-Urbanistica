@@ -6,7 +6,7 @@
   <title>Consegna PSC/PSA – Geoportale Regione Calabria</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-italia@2.18.1/dist/css/bootstrap-italia.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-  <link rel="stylesheet" href="css/portale.css?v=20261127k">
+  <link rel="stylesheet" href="css/portale.css?v=20261127l">
 </head>
 <body>
 <a class="skip-link visually-hidden-focusable" href="#main-content">Vai al contenuto</a>
@@ -193,9 +193,9 @@
             <select id="tpl-ambito" class="form-select form-select-sm"></select>
           </div>
           <div class="mb-3">
-            <label for="tpl-regole" class="form-label-plain">Regole topologiche</label>
+            <label for="tpl-regole" class="form-label-plain">Regole topologiche <span class="text-muted">(facoltativo)</span></label>
             <select id="tpl-regole" class="form-select form-select-sm"></select>
-            <div class="small text-muted mt-1">Obbligatorie: ValidaFornitura le userà per la topologia. Le crei e modifichi in <a href="#/regole-topologia">Regole topologiche</a>.</div>
+            <div class="small text-muted mt-1">Puoi associarle ora, se esistono già, oppure definirle dopo il caricamento sui layer del template. Finché non ha regole il template non si può usare per validare.</div>
           </div>
           <div class="mb-3">
             <label for="tpl-note" class="form-label-plain">Note della versione</label>
@@ -222,6 +222,17 @@
           <button id="tpl-carica" class="btn btn-primary btn-sm" type="button" disabled>Carica sul Portal</button>
           </fieldset>
           <ol id="tpl-passi" class="small mt-3"></ol>
+          <div id="tpl-passo-regole" class="card card-body mt-3" hidden>
+            <h3 class="h6">Passo 2 – Regole topologiche di “<span id="tpl-pr-titolo"></span>”</h3>
+            <p class="small text-muted">Il template è caricato ma non ha regole topologiche: finché non le associ non si può usare per validare le forniture.</p>
+            <label for="tpl-pr-esistenti" class="form-label-plain">Usa regole esistenti</label>
+            <div class="d-flex gap-2 mb-2"><select id="tpl-pr-esistenti" class="form-select form-select-sm"></select>
+              <button id="tpl-pr-conferma" class="btn btn-primary btn-sm text-nowrap" type="button">Conferma</button></div>
+            <div id="tpl-pr-esito" class="small mb-2"></div>
+            <p class="small mb-1">oppure <a id="tpl-pr-crea" href="#/regole-topologia">crea nuove regole sui layer di questo template</a>
+              (con le regole predefinite come punto di partenza).</p>
+            <p class="small text-muted mb-0">Puoi anche farlo più tardi da <a href="#/template-regole">Template e regole topologiche</a>.</p>
+          </div>
         </div>
         <div class="col-lg-5">
           <div class="callout note">
@@ -563,15 +574,15 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/shpjs/3.6.3/shp.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/rbush@3.0.1/rbush.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js"></script>
-<script src="js/config.js?v=20261127k"></script>
-<script src="js/template_portal.js?v=20261127k"></script>
-<script src="js/tavole_qtrp.js?v=20261127k"></script>
-<script src="js/comuni_calabria.js?v=20261127k"></script>
-<script src="js/topologia.js?v=20261127k"></script>
-<script src="js/app.js?v=20261127k"></script>
-<script src="js/carica_template.js?v=20261127k"></script>
-<script src="js/regole_topologia.js?v=20261127k"></script>
-<script src="js/template_regole.js?v=20261127k"></script>
-<script src="js/servizi.js?v=20261127k"></script>
+<script src="js/config.js?v=20261127l"></script>
+<script src="js/template_portal.js?v=20261127l"></script>
+<script src="js/tavole_qtrp.js?v=20261127l"></script>
+<script src="js/comuni_calabria.js?v=20261127l"></script>
+<script src="js/topologia.js?v=20261127l"></script>
+<script src="js/app.js?v=20261127l"></script>
+<script src="js/carica_template.js?v=20261127l"></script>
+<script src="js/regole_topologia.js?v=20261127l"></script>
+<script src="js/template_regole.js?v=20261127l"></script>
+<script src="js/servizi.js?v=20261127l"></script>
 </body>
 </html>

@@ -35,7 +35,7 @@
     if (!sessione) return;
     const q = `tags:"${CFG.regoleTag}" AND tags:"ambito:${$("#tpl-ambito").value}"`;
     const j = await (await fetch(`${portal}/sharing/rest/search?f=json&num=100&sortField=modified&sortOrder=desc&q=${encodeURIComponent(q)}&token=${encodeURIComponent(sessione.token)}`)).json();
-    $("#tpl-regole").innerHTML = `<option value="">— scegli le regole —</option>` +
+    $("#tpl-regole").innerHTML = `<option value="">— le definisco dopo il caricamento —</option>` +
       (j.results || []).map((r) => `<option value="${esc(r.id)}">${esc(r.title)}</option>`).join("");
     abilita();
   }
@@ -143,7 +143,7 @@
     } catch (e) { archivio = null; $("#tpl-file").textContent = e.message; }
     abilita();
   }
-  function abilita() { $("#tpl-carica").disabled = !(sessione && archivio && $("#tpl-regole").value); }
+  function abilita() { $("#tpl-carica").disabled = !(sessione && archivio); }
 
   // ---------------------------------------------------------------- invio al servizio UploadTemplate
   async function gp(url, campi) {
@@ -158,13 +158,48 @@
     $("#tpl-passi").appendChild(li);
     return (ok, nota) => { li.innerHTML = `${esc(testo)} <span class="${ok ? "text-success" : "text-danger"}">${ok ? "fatto" : "errore"}${nota ? " – " + esc(nota) : ""}</span>`; };
   }
+  // ---------------------------------------------------------------- passo 2: regole topologiche del template caricato
+  async function lavoro(url, campi) { // job asincrono di un web tool: attende la fine, errori con il codice del tool
+    const task = url.replace(/\/+$/, "");
+    let st = await gp(task + "/submitJob", campi);
+    const id = st.jobId;
+    for (let i = 0; i < 200 && !/Succeeded|Failed|Cancelled|TimedOut/.test(st.jobStatus); i++) { await pausa(2000); st = await gp(`${task}/jobs/${id}`, {}); }
+    if (st.jobStatus !== "esriJobSucceeded") {
+      const m = (st.messages || []).filter((x) => /Error/.test(x.type) && !/^Failed/.test(x.description)).map((x) => x.description.trim()).join(" · ");
+      throw new Error(m || st.jobStatus);
+    }
+    return async (n) => (await gp(`${task}/jobs/${id}/results/${n}`, {})).value;
+  }
+  function passoRegole(t) {
+    const box = $("#tpl-passo-regole");
+    if (t.regole) { box.hidden = true; return; } // regole gia' associate al caricamento
+    box.hidden = false;
+    $("#tpl-pr-titolo").textContent = t.titolo;
+    $("#tpl-pr-esistenti").innerHTML = $("#tpl-regole").innerHTML.replace("— le definisco dopo il caricamento —", "— scegli le regole —");
+    $("#tpl-pr-crea").href = `#/regole-topologia/${t.gdb}`;
+    $("#tpl-pr-esito").innerHTML = "";
+    $("#tpl-pr-conferma").onclick = async () => {
+      const r = $("#tpl-pr-esistenti").value;
+      if (!r) { $("#tpl-pr-esito").innerHTML = `<span class="text-danger">scegli un file di regole</span>`; return; }
+      $("#tpl-pr-conferma").disabled = true;
+      $("#tpl-pr-esito").innerHTML = `<span class="text-muted">Controllo e associazione (AssociaRegoleTopologia)…</span>`;
+      try {
+        await lavoro(CFG.associaRegoleUrl, { item_template: t.gdb, item_regole: r, token: sessione.token });
+        $("#tpl-pr-esito").innerHTML = `<span class="text-success">Regole associate: il template è completo.</span>`;
+        if (window.TEMPLATE) await window.TEMPLATE.aggiorna();
+      } catch (e) { $("#tpl-pr-esito").innerHTML = `<span class="text-danger">${esc(e.message)}</span>`; }
+      finally { $("#tpl-pr-conferma").disabled = false; }
+    };
+  }
+
   async function carica() {
     const titolo = $("#tpl-titolo").value.trim(), filtro = CFG.templateFiltro || "template";
     $("#tpl-passi").innerHTML = "";
     if (sessione.scade < Date.now()) { sessione = null; memo.via("psc-admin"); disegnaAccesso("sessione scaduta: accedi di nuovo"); return; }
     $("#tpl-carica").disabled = true;
     const task = CFG.uploadTemplateUrl.replace(/\/+$/, ""), servizio = task.replace(/\/[^/]+$/, "");
-    let p;
+    let p, dopo = null;
+    $("#tpl-passo-regole").hidden = true;
     try {
       p = passo("Invio del template al servizio");
       const up = await gp(servizio + "/uploads/upload", { file: new File([archivio.blob], archivio.nome, { type: "application/zip" }) });
@@ -187,10 +222,12 @@
       const m = typeof testo === "string" ? JSON.parse(testo) : testo;
       p(true, `${m.layer.length} layer, EPSG:${m.epsg}; template ${gdb}, struttura ${json}`);
 
+      dopo = { gdb, struttura: json, titolo: titolo || archivio.nome.replace(/(\.gdb)?\.zip$/i, ""), ambito: $("#tpl-ambito").value, regole: $("#tpl-regole").value };
       p = passo("Aggiornamento dell'elenco delle versioni");
       if (window.TEMPLATE) await window.TEMPLATE.aggiorna();
       p(true, $("#tpl-condivisione").value === "tutti" ? `“${titolo || "Template"}” è la versione corrente` : `“${titolo || "Template"}” caricato (${$("#tpl-condivisione").value})`);
       archivio = null; $("#tpl-file").textContent = "Nessun file scelto"; $("#tpl-titolo").value = ""; $("#tpl-note").value = "";
+      passoRegole(dopo);
     } catch (e) {
       if (p) p(false, e.message);
     } finally { abilita(); }

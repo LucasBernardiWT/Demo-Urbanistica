@@ -29,7 +29,7 @@
     }
     box.innerHTML = `<table class="table table-sm tab-report"><thead><tr><th>Versione</th><th>Pubblicata</th><th>Aggiornata</th><th>Note</th><th>Scarica</th></tr></thead><tbody>` +
       T.elenco.map((x, i) => `<tr><td><strong>${esc(x.titolo)}</strong>${i === 0 ? ' <span class="badge bg-success ms-1">corrente</span>' : ""}</td>
-        <td>${dataIt(x.creato)}</td><td>${dataIt(x.modificato)}</td><td>${esc(x.note)}</td>
+        <td>${dataIt(x.creato)}</td><td>${dataIt(x.modificato)}</td><td>${esc(x.note)}${x.daCompletare ? ` <a class="badge text-bg-warning text-decoration-none" href="#/regole-topologia/${esc(x.id)}">regole da definire</a>` : ""}</td>
         <td class="text-nowrap"><a class="btn btn-outline-primary btn-sm me-1" href="${portalUrl}/sharing/rest/content/items/${esc(x.id)}/data" download>File Geodatabase</a><button
           class="btn btn-outline-primary btn-sm me-1" type="button" data-esporta="shp" data-id="${esc(x.id)}">Shapefile</button><button
           class="btn btn-outline-primary btn-sm" type="button" data-esporta="gpkg" data-id="${esc(x.id)}">GeoPackage</button></td></tr>`).join("") +
