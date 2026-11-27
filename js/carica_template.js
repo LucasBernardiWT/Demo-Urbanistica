@@ -169,7 +169,9 @@
       const id = st.jobId;
       for (let i = 0; i < 200 && !/Succeeded|Failed|Cancelled|TimedOut/.test(st.jobStatus); i++) { await pausa(2000); st = await gp(`${task}/jobs/${id}`, {}); }
       if (st.jobStatus !== "esriJobSucceeded") {
-        const m = (st.messages || []).filter((x) => /Error|Warning/.test(x.type)).map((x) => x.description).join(" · ");
+        // solo i messaggi d'errore del tool (codice UTnn e motivo), senza le righe generiche del server
+        const m = (st.messages || []).filter((x) => /Error/.test(x.type) && !/^Failed/.test(x.description))
+          .map((x) => x.description.trim()).join(" · ");
         throw new Error(m || st.jobStatus);
       }
       const r = async (n) => (await gp(`${task}/jobs/${id}/results/${n}`, {})).value;
