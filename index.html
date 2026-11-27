@@ -6,7 +6,7 @@
   <title>Consegna PSC/PSA – Geoportale Regione Calabria</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-italia@2.18.1/dist/css/bootstrap-italia.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-  <link rel="stylesheet" href="css/portale.css?v=20261127r">
+  <link rel="stylesheet" href="css/portale.css?v=20261127s">
 </head>
 <body>
 <a class="skip-link visually-hidden-focusable" href="#main-content">Vai al contenuto</a>
@@ -357,6 +357,7 @@
               <div class="small text-muted mt-1">Shapefile, File Geodatabase e GeoPackage sono controllati dal servizio regionale ValidaFornitura, con il template e le sue regole topologiche pubblicati sul Portal.</div>
             </div>
           </div>
+          <div id="vf-sovrascrivi" class="mb-2"></div>
           <div id="vf-accesso" class="mb-2"></div>
           <div class="row g-3 mb-3">
             <div class="col-md-4"><label for="vf-cartella" class="form-label-plain">Cartella del Portal</label>
@@ -426,7 +427,21 @@
 
     <!-- ===================== LE MIE FORNITURE ===================== -->
     <div class="vista" data-vista="forniture" hidden>
-      <p class="mb-3">Ogni verifica eseguita resta qui con il suo report. La <strong>versione di lavoro</strong> di un Comune è la fornitura conforme
+      <h2 class="h5">Forniture salvate sul Portal</h2>
+      <p class="mb-3">Le forniture validate con ValidaFornitura, salvate nel tuo account con report e pacchetto errori. Per caricarne una
+        versione corretta usa “Sostituisci con un nuovo zip”: la fornitura resta la stessa, report e pacchetto errori vengono sovrascritti.</p>
+      <div id="fp-accesso"></div>
+      <div id="fp-filtri" class="row g-3 mb-3" hidden>
+        <div class="col-md-5"><label for="fp-cartella" class="form-label-plain">Cartella del Portal</label>
+          <select id="fp-cartella" class="form-select form-select-sm"></select></div>
+        <div class="col-md-4"><label for="fp-comune" class="form-label-plain">Comune</label>
+          <select id="fp-comune" class="form-select form-select-sm"><option value="">Tutti</option></select></div>
+        <div class="col-md-3"><label for="fp-esito" class="form-label-plain">Esito</label>
+          <select id="fp-esito" class="form-select form-select-sm"><option value="">Tutti</option><option>CONFORME</option><option>NON CONFORME</option></select></div>
+      </div>
+      <div id="fp-elenco" class="mb-5"></div>
+      <h2 class="h5">Verifiche in questo browser</h2>
+      <p class="mb-3">Lo storico locale del mockup, usato per le tavole. La <strong>versione di lavoro</strong> di un Comune è la fornitura conforme
         da cui si compongono le tavole e che verrà inviata alla Regione.</p>
       <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
         <label for="f-comune" class="small fw-semibold mb-0">Comune</label>
@@ -600,16 +615,17 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/shpjs/3.6.3/shp.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/rbush@3.0.1/rbush.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js"></script>
-<script src="js/config.js?v=20261127r"></script>
-<script src="js/accesso.js?v=20261127r"></script>
-<script src="js/template_portal.js?v=20261127r"></script>
-<script src="js/tavole_qtrp.js?v=20261127r"></script>
-<script src="js/comuni_calabria.js?v=20261127r"></script>
-<script src="js/topologia.js?v=20261127r"></script>
-<script src="js/app.js?v=20261127r"></script>
-<script src="js/carica_template.js?v=20261127r"></script>
-<script src="js/regole_topologia.js?v=20261127r"></script>
-<script src="js/template_regole.js?v=20261127r"></script>
-<script src="js/servizi.js?v=20261127r"></script>
+<script src="js/config.js?v=20261127s"></script>
+<script src="js/accesso.js?v=20261127s"></script>
+<script src="js/template_portal.js?v=20261127s"></script>
+<script src="js/tavole_qtrp.js?v=20261127s"></script>
+<script src="js/comuni_calabria.js?v=20261127s"></script>
+<script src="js/topologia.js?v=20261127s"></script>
+<script src="js/app.js?v=20261127s"></script>
+<script src="js/carica_template.js?v=20261127s"></script>
+<script src="js/regole_topologia.js?v=20261127s"></script>
+<script src="js/forniture_portal.js?v=20261127s"></script>
+<script src="js/template_regole.js?v=20261127s"></script>
+<script src="js/servizi.js?v=20261127s"></script>
 </body>
 </html>

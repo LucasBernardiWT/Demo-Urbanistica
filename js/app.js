@@ -385,7 +385,7 @@
     const formato = $("#formato-errori").value;
     const r = await eseguiJob(CFG.validaFornituraUrl, file, {
       comune: comuneValido() || $("#comune").value.trim(), ambito: CFG.ambitoPagina, titolo: $("#titolo-fornitura").value.trim(),
-      token: s.token, item_fornitura: "", formato_errori: formato, item_template: tpl.id,
+      token: s.token, item_fornitura: sovrascrivi ? sovrascrivi.id : "", formato_errori: formato, item_template: tpl.id,
       cartella_portal: $("#vf-cartella").value, condivisione: $("#vf-condivisione").value,
       gruppi: [...$("#vf-gruppi").selectedOptions].map((o) => o.value).join(","), registro_url: CFG.registroUrl || "", solo_verifica: "false",
     }, ["report_testo", "report_pdf", "errori_zip", "out_item_fornitura"], avanzamentoVf);
@@ -402,7 +402,28 @@
       window.SERVIZI.aggiornaFornitura(ULTIMO.id, { topologia: topo, itemPortal: r.out_item_fornitura });
     }
     esitoFinale(topo, { pdf: r.report_pdf, zip: r.errori_zip }, null);
+    if (sovrascrivi) { $("#vf-sovrascrivi").innerHTML = `<div class="msg msg-info">Fornitura “${esc(sovrascrivi.titolo)}” sostituita: stessi item sul Portal, report e pacchetto errori aggiornati.</div>`; sovrascrivi = null; history.replaceState(null, "", "#/verifica"); }
   }
+  // modalita' sovrascrittura: "#/verifica/<id della fornitura>" (da Le mie forniture, "Sostituisci con un nuovo zip")
+  let sovrascrivi = null;
+  async function modalitaSovrascrittura() {
+    const m = /^#\/verifica\/([0-9a-f]{32})$/.exec(location.hash), box = $("#vf-sovrascrivi");
+    if (!box) return;
+    if (!m) { if (location.hash.startsWith("#/verifica")) { sovrascrivi = null; box.innerHTML = ""; } return; }
+    const s = window.ACCESSO && window.ACCESSO.sessione();
+    if (!s) { box.innerHTML = `<div class="msg msg-warn">Per sostituire una fornitura accedi al Portal con il pulsante in alto.</div>`; return; }
+    const j = await (await fetch(`${(CFG.portalUrl || "").replace(/\/+$/, "")}/sharing/rest/content/items/${m[1]}?f=json&token=${encodeURIComponent(s.token)}`)).json();
+    if (j.error) { box.innerHTML = `<div class="msg msg-err">Fornitura ${esc(m[1])} non trovata: ${esc(j.error.message)}</div>`; return; }
+    const comune = ((j.tags || []).find((t) => t.startsWith("comune:")) || "").slice(7);
+    sovrascrivi = { id: j.id, titolo: j.title };
+    if (comune) { $("#comune").value = comune; pronto(); }
+    if (!$("#titolo-fornitura").value) $("#titolo-fornitura").value = j.title;
+    box.innerHTML = `<div class="msg msg-warn"><strong>Stai sostituendo la fornitura “${esc(j.title)}”</strong>${comune ? ` (${esc(comune)})` : ""}: il nuovo zip
+      viene validato e prende il posto di quello salvato; report e pacchetto errori vengono sovrascritti. <a href="#/verifica">Annulla: nuova fornitura</a></div>`;
+  }
+  window.addEventListener("hashchange", () => modalitaSovrascrittura().catch(() => {}));
+  document.addEventListener("accesso-cambiato", () => modalitaSovrascrittura().catch(() => {}));
+  modalitaSovrascrittura().catch(() => {});
   // avanzamento dai messaggi del job: "FASE n/6 – testo", "LAYER i/N – nome", "Attributi: x errori, y avvisi"
   // (servizio ValidaFornitura con livello dei messaggi "Info"; senza, resta l'indicatore generico)
   const ATTRIBUTI = ["completezza", "crs", "struttura", "valori", "dipendenze"];
