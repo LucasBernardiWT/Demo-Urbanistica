@@ -6,7 +6,7 @@
   <title>Consegna PSC/PSA – Geoportale Regione Calabria</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-italia@2.18.1/dist/css/bootstrap-italia.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-  <link rel="stylesheet" href="css/portale.css?v=20261126e">
+  <link rel="stylesheet" href="css/portale.css?v=20261127a">
 </head>
 <body>
 <a class="skip-link visually-hidden-focusable" href="#main-content">Vai al contenuto</a>
@@ -88,7 +88,7 @@
         <a class="servizio" href="#/template">
           <svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v3h16v-3"/></svg>
           <span class="s-titolo">Template e regole</span>
-          <span class="s-desc">Scarica il template dei dati del QTRP in RDN2008 o WGS84 e consulta layer, campi e codelist.</span>
+          <span class="s-desc">Scarica il template dei dati del QTRP in File Geodatabase, shapefile o GeoPackage, anche nelle versioni precedenti.</span>
           <span class="s-btn">Apri <svg class="ico" viewBox="0 0 24 24"><path d="M5 11h11.2l-4.6-4.6L13 5l7 7-7 7-1.4-1.4 4.6-4.6H5z"/></svg></span></a>
         <a class="servizio" href="#/verifica">
           <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z"/></svg>
@@ -118,6 +118,11 @@
       </div>
       <h2 class="h5 titolo-gruppo">Per la Regione Calabria</h2>
       <div class="griglia-servizi">
+        <a class="servizio" href="#/carica-template">
+          <svg viewBox="0 0 24 24"><path d="M12 21V9m0 0-4 4m4-4 4 4M4 7V4h16v3"/></svg>
+          <span class="s-titolo">Carica template</span>
+          <span class="s-desc">Pubblica sul Portal una nuova versione del template dei dati (per l'amministratore regionale).</span>
+          <span class="s-btn">Apri <svg class="ico" viewBox="0 0 24 24"><path d="M5 11h11.2l-4.6-4.6L13 5l7 7-7 7-1.4-1.4 4.6-4.6H5z"/></svg></span></a>
         <a class="servizio disabilitato" aria-disabled="true">
           <svg viewBox="0 0 24 24"><path d="M9 5H5v14h14v-4M14 4h6v6M20 4l-9 9"/></svg>
           <span class="s-titolo">Istruttoria delle consegne</span>
@@ -139,59 +144,53 @@
     <!-- ===================== TEMPLATE ===================== -->
     <div class="vista" data-vista="template" hidden>
     <section id="sez-template" class="mb-5">
+      <div class="callout note mb-4">
+        <div class="callout-title"><svg class="ico" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 15h-2v-6h2v6Zm0-8h-2V7h2v2Z"/></svg> Sistema di riferimento e formati</div>
+        <p>I dati sono inquadrati nel sistema <strong>RDN2008 / UTM fuso 33N, EPSG:7792</strong>, adottato per legge dalle Pubbliche Amministrazioni (DPCM 10 novembre 2011).</p>
+        <p class="mb-0">Ogni versione del template si scarica in <strong>File Geodatabase</strong> (con codelist e codelist dipendenti già impostate),
+          <strong>shapefile</strong> o <strong>GeoPackage</strong>. Shapefile e GeoPackage non contengono le codelist dipendenti:
+          i controlli le applicano comunque, perché le regole vengono sempre dal File Geodatabase della versione scelta.</p>
+      </div>
+      <h3 class="h6">Versioni del template</h3>
+      <p class="small text-muted">Elenco letto dal Portal regionale: la versione più recente è quella corrente. Le versioni precedenti restano disponibili
+        per i piani redatti prima dei loro aggiornamenti.</p>
+      <div id="storico-template" class="table-responsive"><p class="small text-muted">Lettura dei template dal Portal…</p></div>
+    </section>
+    </div>
+
+    <!-- ===================== CARICA TEMPLATE (REGIONE) ===================== -->
+    <div class="vista" data-vista="carica-template" hidden>
+    <section class="mb-5">
       <div class="row g-4">
         <div class="col-lg-7">
-          <div class="callout note">
-            <div class="callout-title"><svg class="ico" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 15h-2v-6h2v6Zm0-8h-2V7h2v2Z"/></svg> Perché due sistemi di riferimento</div>
-            <p>Il sistema geodetico nazionale adottato per legge dalle Pubbliche Amministrazioni è
-              <strong>RDN2008</strong> (DPCM 10 novembre 2011): per il territorio calabrese la proiezione è
-              <strong>RDN2008 / UTM fuso 33N, EPSG:7792</strong>.</p>
-            <p>Il <strong>QTRP</strong> della Regione Calabria indica invece per l'Infrastruttura di Dati Territoriali regionale il sistema
-              <strong>WGS84 / UTM fuso 33N, EPSG:32633</strong>.</p>
-            <p class="mb-0">In attesa dell'allineamento del QTRP alla norma nazionale, il template è disponibile in entrambi i sistemi:
-              contenuti, campi e codelist sono identici, cambia solo il sistema di riferimento.
-              <strong>Si consiglia RDN2008.</strong></p>
+          <div id="admin-accesso" class="mb-3"></div>
+          <div class="mb-3">
+            <label class="form-label-plain">Template (File Geodatabase)</label>
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+              <label class="btn btn-outline-primary btn-sm mb-0">Scegli la cartella .gdb<input id="tpl-cartella" type="file" webkitdirectory hidden></label>
+              <label class="btn btn-outline-primary btn-sm mb-0">oppure uno zip<input id="tpl-zip" type="file" accept=".zip" hidden></label>
+              <span id="tpl-file" class="small text-muted">Nessun file scelto</span>
+            </div>
+            <div class="small text-muted mt-1">Se scegli la cartella, viene compressa nel browser prima del caricamento.</div>
           </div>
+          <div class="mb-3">
+            <label for="tpl-titolo" class="form-label-plain">Titolo della versione</label>
+            <input id="tpl-titolo" class="form-control form-control-sm" type="text" placeholder="es. Template PSC QTRP v1.1">
+            <div class="small text-muted mt-1">Deve contenere la parola “template”, perché compaia nell'elenco delle versioni.</div>
+          </div>
+          <div class="mb-3">
+            <label for="tpl-note" class="form-label-plain">Note della versione</label>
+            <input id="tpl-note" class="form-control form-control-sm" type="text" maxlength="250" placeholder="es. Aggiunti i livelli QVT; campo Note portato a 250 caratteri">
+          </div>
+          <button id="tpl-carica" class="btn btn-primary btn-sm" type="button" disabled>Carica sul Portal</button>
+          <ol id="tpl-passi" class="small mt-3"></ol>
         </div>
         <div class="col-lg-5">
-          <div class="card card-bg shadow-sm h-100"><div class="card-body p-4">
-            <fieldset class="mb-4">
-              <legend class="h6 legend-plain">Template</legend>
-              <div id="lista-template-scarica" class="small text-muted">Lettura dei template dal Portal…</div>
-            </fieldset>
-            <fieldset class="mb-4">
-              <legend class="h6 legend-plain">Formato</legend>
-              <div class="form-check">
-                <input class="form-check-input" type="radio" name="fmt" id="fmt-shp" value="shp" checked>
-                <label class="form-check-label" for="fmt-shp">Shapefile <small class="text-muted">(formato di consegna previsto dal QTRP)</small></label>
-              </div>
-              <div class="form-check">
-                <input class="form-check-input" type="radio" name="fmt" id="fmt-gdb" value="gdb">
-                <label class="form-check-label" for="fmt-gdb">File Geodatabase <small class="text-muted">(con codelist e codelist dipendenti già impostate)</small></label>
-              </div>
-            </fieldset>
-            <a id="btn-template" class="btn btn-primary w-100" href="#" download>
-              <svg class="ico ico-w" viewBox="0 0 24 24"><path d="M11 3h2v10l3.5-3.5 1.4 1.4L12 16.8l-5.9-5.9 1.4-1.4L11 13V3ZM4 19h16v2H4z"/></svg>
-              Scarica il template</a>
-            <p id="nome-template" class="small text-muted mt-2 mb-0"></p>
-            <p class="small text-muted mt-1 mb-0">I template sono pubblicati sul Portal regionale; lo shapefile è generato dal File Geodatabase al momento del download.</p>
-          </div></div>
-        </div>
-      </div>
-
-      <div class="accordion mt-4" id="acc-template">
-        <div class="accordion-item">
-          <h3 class="accordion-header">
-            <button class="accordion-button collapsed" type="button" data-toggle-target="contenuto-template" aria-expanded="false">
-              Contenuto del template: <span id="n-layer" class="ms-1"></span>
-            </button>
-          </h3>
-          <div id="contenuto-template" class="accordion-collapse collapse">
-            <div class="accordion-body">
-              <p class="small text-muted">Elenco generato dal geodatabase di riferimento (<span id="origine-regole"></span>).
-                Tutti i layer sono poligonali e vanno consegnati: le consegne parziali non sono ammesse.</p>
-              <div id="tabella-template" class="table-responsive"></div>
-            </div>
+          <div class="callout note">
+            <div class="callout-title"><svg class="ico" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 15h-2v-6h2v6Zm0-8h-2V7h2v2Z"/></svg> Come funziona</div>
+            <p>Il template viene caricato come elemento File Geodatabase del Portal, nell'account con cui accedi, con il tag che lo fa comparire tra le versioni.</p>
+            <p>Dopo il caricamento il servizio di validazione ne legge la struttura: se il sistema di riferimento non è RDN2008 (EPSG:7792) viene segnalato e il template non viene condiviso.</p>
+            <p class="mb-0">Se è corretto, viene condiviso con tutti e diventa la versione corrente per i Comuni.</p>
           </div>
         </div>
       </div>
@@ -229,14 +228,14 @@
             <div class="col-md-7">
               <label for="formato-errori" class="form-label-plain">Pacchetto degli errori topologici</label>
               <select id="formato-errori" class="form-select form-select-sm">
-                <option value="shp">Shapefile</option><option value="gdb">File Geodatabase</option></select>
-              <div class="small text-muted mt-1">Shapefile e File Geodatabase sono controllati dai servizi regionali, con le regole del template di riferimento pubblicato sul Portal.</div>
+                <option value="shp">Shapefile</option><option value="gdb">File Geodatabase</option><option value="gpkg">GeoPackage</option></select>
+              <div class="small text-muted mt-1">Shapefile, File Geodatabase e GeoPackage sono controllati dai servizi regionali, con le regole del template di riferimento pubblicato sul Portal.</div>
             </div>
           </div>
           <span class="form-label-plain">Archivio .zip</span>
           <div id="dropzone" class="dropzone-barra" tabindex="0" role="button" aria-label="Seleziona o trascina l'archivio zip della fornitura">
             <svg class="dz-ico" viewBox="0 0 24 24"><path d="M19.4 10a7.5 7.5 0 0 0-14.3-2A6 6 0 0 0 6 20h13a5 5 0 0 0 .4-10ZM13 13v4h-2v-4H8l4-4 4 4h-3Z"/></svg>
-            <span id="dz-testo" class="dz-testo">Trascina qui lo zip con la cartella degli shapefile o con il File Geodatabase</span>
+            <span id="dz-testo" class="dz-testo">Trascina qui lo zip con gli shapefile, il File Geodatabase o il GeoPackage</span>
             <label class="btn btn-outline-primary btn-sm mb-0 ms-auto">Scegli file<input id="file" type="file" accept=".zip" hidden></label>
           </div>
           <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
@@ -466,12 +465,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/shpjs/3.6.3/shp.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/rbush@3.0.1/rbush.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js"></script>
-<script src="js/config.js?v=20261126e"></script>
-<script src="js/template_portal.js?v=20261126e"></script>
-<script src="js/tavole_qtrp.js?v=20261126e"></script>
-<script src="js/comuni_calabria.js?v=20261126e"></script>
-<script src="js/topologia.js?v=20261126e"></script>
-<script src="js/app.js?v=20261126e"></script>
-<script src="js/servizi.js?v=20261126e"></script>
+<script src="js/config.js?v=20261127a"></script>
+<script src="js/template_portal.js?v=20261127a"></script>
+<script src="js/tavole_qtrp.js?v=20261127a"></script>
+<script src="js/comuni_calabria.js?v=20261127a"></script>
+<script src="js/topologia.js?v=20261127a"></script>
+<script src="js/app.js?v=20261127a"></script>
+<script src="js/carica_template.js?v=20261127a"></script>
+<script src="js/servizi.js?v=20261127a"></script>
 </body>
 </html>

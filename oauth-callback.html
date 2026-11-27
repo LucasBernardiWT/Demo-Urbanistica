@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="it">
+<head><meta charset="utf-8"><title>Accesso al Portal</title></head>
+<body>
+<p>Accesso in corso…</p>
+<script>
+  // Pagina di ritorno dell'accesso OAuth al Portal: passa il token alla finestra del mockup e si chiude.
+  (function () {
+    var p = new URLSearchParams(location.hash.replace(/^#/, ""));
+    var msg = { tipo: "oauth", token: p.get("access_token"), utente: p.get("username"),
+                errore: p.get("error_description") || p.get("error") };
+    if (window.opener) { window.opener.postMessage(msg, location.origin); window.close(); }
+    else document.body.textContent = msg.errore ? "Accesso non riuscito: " + msg.errore : "Accesso eseguito: torna alla pagina del portale.";
+  })();
+</script>
+</body>
+</html>

@@ -9,92 +9,65 @@
 
   // Sistemi di riferimento ammessi, riconosciuti dal nome PROJCS del .prj (formato Esri)
   const CRS = {
-    "WGS_1984_UTM_Zone_33N": { epsg: 32633, nome: "WGS84 / UTM 33N (EPSG:32633)" },
     "RDN2008_UTM_zone_33N": { epsg: 7792, nome: "RDN2008 / UTM 33N (EPSG:7792)" },
   };
   const TIPI_POLIGONO = [5, 15, 25];
   const MAX_RIGHE_VIDEO = 500;
 
   // ---------------------------------------------------------------- 1. template
-  // download del template scelto, dal Portal: il gdb e' l'item stesso, lo shapefile e' generato dal gdb
-  // con il tool "Esporta template shapefile" del servizio valida_attributi
+  // storico delle versioni pubblicate sul Portal (js/template_portal.js), dalla piu' recente (corrente).
+  // Download: il File Geodatabase e' l'item stesso; shapefile e GeoPackage li genera dal gdb il tool
+  // "Esporta template" del servizio valida_attributi.
   const portalUrl = ((window.CONFIG_MOCKUP || {}).portalUrl || "").replace(/\/+$/, "");
-  function listaTemplateScarica() {
-    const T = window.TEMPLATE, box = $("#lista-template-scarica");
-    if (!T || !T.elenco.length) { box.textContent = T && T.errore ? "Portal non raggiungibile: " + T.errore : "Nessun template sul Portal."; return; }
-    box.className = "";
-    box.innerHTML = T.elenco.map((x) => `<div class="form-check"><input class="form-check-input" type="radio" name="tpl-scarica" id="tpl-${esc(x.id)}" value="${esc(x.id)}"${T.attivo && T.attivo.id === x.id ? " checked" : ""}>
-      <label class="form-check-label" for="tpl-${esc(x.id)}">${esc(x.titolo)}</label></div>`).join("");
-    box.querySelectorAll("input").forEach((i) => i.addEventListener("change", () => T.scegli(i.value)));
-    aggiornaTemplate();
-  }
-  function aggiornaTemplate() {
-    const T = window.TEMPLATE, tpl = T && T.attivo, fmt = document.querySelector("input[name=fmt]:checked").value;
-    const b = $("#btn-template");
-    if (!tpl) { b.classList.add("disabled"); $("#nome-template").textContent = ""; return; }
-    b.classList.remove("disabled");
-    const base = tpl.titolo.replace(/_gdb$/i, "");
-    if (fmt === "gdb") {
-      b.href = `${portalUrl}/sharing/rest/content/items/${tpl.id}/data`; b.setAttribute("download", base + "_gdb.zip");
-      $("#nome-template").textContent = base + "_gdb.zip";
-    } else {
-      b.href = "#"; b.removeAttribute("download");
-      $("#nome-template").textContent = base + "_shp.zip (generato dal File Geodatabase)";
+  const dataIt = (ms) => (ms ? new Date(ms).toLocaleDateString("it-IT") : "");
+  function storicoTemplate() {
+    const T = window.TEMPLATE, box = $("#storico-template");
+    if (!T || !box) return;
+    if (!T.elenco.length) {
+      box.innerHTML = `<p class="small text-muted">${T.errore ? "Portal non raggiungibile: " + esc(T.errore) : "Nessun template pubblicato sul Portal."}</p>`;
+      return;
     }
+    box.innerHTML = `<table class="table table-sm tab-report"><thead><tr><th>Versione</th><th>Pubblicata</th><th>Aggiornata</th><th>Note</th><th>Scarica</th></tr></thead><tbody>` +
+      T.elenco.map((x, i) => `<tr><td><strong>${esc(x.titolo)}</strong>${i === 0 ? ' <span class="badge bg-success ms-1">corrente</span>' : ""}</td>
+        <td>${dataIt(x.creato)}</td><td>${dataIt(x.modificato)}</td><td>${esc(x.note)}</td>
+        <td class="text-nowrap"><a class="btn btn-outline-primary btn-sm me-1" href="${portalUrl}/sharing/rest/content/items/${esc(x.id)}/data" download>File Geodatabase</a><button
+          class="btn btn-outline-primary btn-sm me-1" type="button" data-esporta="shp" data-id="${esc(x.id)}">Shapefile</button><button
+          class="btn btn-outline-primary btn-sm" type="button" data-esporta="gpkg" data-id="${esc(x.id)}">GeoPackage</button></td></tr>`).join("") +
+      "</tbody></table>";
   }
-  $("#btn-template").addEventListener("click", async (e) => {
-    const fmt = document.querySelector("input[name=fmt]:checked").value, tpl = window.TEMPLATE && window.TEMPLATE.attivo;
-    if (fmt !== "shp" || !tpl) return;
-    e.preventDefault();
-    const b = $("#btn-template"), testo = b.innerHTML;
-    b.classList.add("disabled"); b.textContent = "Preparazione dello shapefile…";
+  $("#storico-template").addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-esporta]");
+    if (!b) return;
+    const testo = b.textContent;
+    b.disabled = true; b.textContent = "Preparazione…";
     try {
-      const task = CFG.esportaShpUrl.replace(/\/+$/, "");
-      const fd = new FormData(); fd.append("item_template", tpl.id);
+      const task = CFG.esportaUrl.replace(/\/+$/, "");
+      const fd = new FormData(); fd.append("item_template", b.dataset.id); fd.append("formato", b.dataset.esporta);
       let st = await gp(task + "/submitJob", fd);
       const id = st.jobId;
       for (let i = 0; i < 150 && !/Succeeded|Failed|Cancelled|TimedOut/.test(st.jobStatus); i++) { await pausa(1500); st = await gp(`${task}/jobs/${id}`); }
       if (st.jobStatus !== "esriJobSucceeded") throw new Error("il servizio ha restituito " + st.jobStatus);
-      const r = await gp(`${task}/jobs/${id}/results/template_shp`);
-      location.href = r.value.url;
+      location.href = (await gp(`${task}/jobs/${id}/results/template_zip`)).value.url;
     } catch (x) {
-      alert("Impossibile preparare lo shapefile: " + x.message);
-    } finally { b.classList.remove("disabled"); b.innerHTML = testo; }
+      alert("Impossibile preparare il template: " + x.message);
+    } finally { b.disabled = false; b.textContent = testo; }
   });
-  document.querySelectorAll("input[name=fmt]").forEach((i) => i.addEventListener("change", aggiornaTemplate));
-  document.addEventListener("template-cambiato", listaTemplateScarica);
-  aggiornaTemplate();
-
-  function tabellaTemplate() {
-    $("#n-layer").textContent = `${R.layer.length} layer`;
-    $("#origine-regole").textContent = R.origine;
-    let h = '<table class="table table-sm tab-report"><thead><tr><th>Layer</th><th>Campo</th><th>Compilazione</th><th>Valori ammessi</th></tr></thead><tbody>';
-    for (const l of R.layer) {
-      const figli = {};
-      for (const d of l.dipendenze) figli[d.campi[1]] = d.campi[0];
-      l.campi.forEach((c, i) => {
-        let comp = c.obbligatorio ? "obbligatorio" : figli[c.nome] ? `dipende da ${figli[c.nome]}` : "facoltativo";
-        let val = c.valori ? c.valori.join(" · ") : `testo libero (max ${c.lunghezza})`;
-        h += `<tr>${i === 0 ? `<td rowspan="${l.campi.length}"><strong>${esc(l.nome)}</strong></td>` : ""}<td>${esc(c.nome)}</td><td>${comp}</td><td>${esc(val)}</td></tr>`;
-      });
-    }
-    $("#tabella-template").innerHTML = h + "</tbody></table>";
-  }
-  tabellaTemplate();
+  storicoTemplate();
 
   // menu dei template sotto "Strumento": elenco e struttura dal Portal; al cambio si aggiornano tabelle e servizi
   function menuTemplate() {
     const T = window.TEMPLATE, sel = $("#template-rif");
     if (!sel || !T) return;
     if (T.errore && !T.elenco.length) { sel.innerHTML = "<option>Portal non raggiungibile</option>"; sel.disabled = true; $("#template-info").textContent = T.errore; return; }
-    sel.innerHTML = T.elenco.map((x) => `<option value="${esc(x.id)}">${esc(x.titolo)}</option>`).join("");
+    sel.innerHTML = T.elenco.map((x, i) => `<option value="${esc(x.id)}">${esc(x.titolo)}${i === 0 ? " (corrente)" : ""}</option>`).join("");
     if (T.attivo) sel.value = T.attivo.id;
     sel.disabled = false;
     const m = window.REGOLE_QTRP;
     $("#template-info").textContent = m && m.layer.length ? `${m.layer.length} layer · ${m.crs || ""}${m.epsg ? " (EPSG:" + m.epsg + ")" : ""}` : "";
   }
   document.addEventListener("template-caricamento", () => { $("#template-info").textContent = "Lettura della struttura del template…"; $("#template-rif").disabled = true; });
-  document.addEventListener("template-cambiato", () => { R = window.REGOLE_QTRP; tabellaTemplate(); menuTemplate(); });
+  document.addEventListener("template-cambiato", () => { R = window.REGOLE_QTRP; storicoTemplate(); menuTemplate(); });
+  document.addEventListener("template-elenco", () => { storicoTemplate(); menuTemplate(); });
   $("#template-rif").addEventListener("change", (e) => window.TEMPLATE.scegli(e.target.value).catch((x) => { $("#template-info").textContent = x.message; $("#template-rif").disabled = false; }));
   document.querySelectorAll("[data-toggle-target]").forEach((b) =>
     b.addEventListener("click", () => {
@@ -269,7 +242,7 @@
         if (s.prj) {
           const p = nomeProj(await zip.file(s.prj).async("string"));
           if (CRS[p]) { quadro[l.nome].crs = `EPSG:${CRS[p].epsg}`; crsTrovati.add(CRS[p].epsg); }
-          else { quadro[l.nome].crs = p || "non leggibile"; err(l.nome, "Sistema di riferimento non ammesso", { valore: p || "", dettaglio: "ammessi EPSG:7792 o EPSG:32633" }); }
+          else { quadro[l.nome].crs = p || "non leggibile"; err(l.nome, "Sistema di riferimento non ammesso", { valore: p || "", dettaglio: "ammesso EPSG:7792 (RDN2008 / UTM 33N)" }); }
         }
         if (s.shp) {
           const head = await zip.file(s.shp).async("arraybuffer");

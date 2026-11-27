@@ -19,7 +19,8 @@ Promise.all([window.TAVOLE_PRONTE, window.MODELLO_PRONTO]).then(function () {
 
   const VISTE = {
     home: ["Pianificazione comunale – PSC/PSA", "Servizi per la redazione, la verifica e la consegna dei Piani Strutturali Comunali secondo il QTRP."],
-    template: ["Template e regole", "Il template dei dati previsto dal QTRP (Tomo IV, Allegato 2) e le regole con cui vengono controllate le forniture."],
+    template: ["Template e regole", "Le versioni del template dei dati previsto dal QTRP, da scaricare in File Geodatabase, shapefile o GeoPackage."],
+    "carica-template": ["Carica template", "Pubblica sul Portal una nuova versione del template dei dati (amministratore regionale)."],
     verifica: ["Carica e verifica la fornitura", "Carica i dati del piano: vengono validati rispetto al template del QTRP e salvati con il report."],
     forniture: ["Le mie forniture", "Storico delle verifiche e versione di lavoro di ogni Comune."],
     tavole: ["Composizione delle tavole", "Le tavole del piano previste dal QTRP, collegate ai layer della versione di lavoro."],
@@ -410,7 +411,7 @@ Promise.all([window.TAVOLE_PRONTE, window.MODELLO_PRONTO]).then(function () {
       $("#legenda").appendChild(classi);
     });
     if (bounds.isValid()) mappa.fitBounds(bounds, { padding: [10, 10] });
-    stato(`Sistema di riferimento della fornitura riproiettato in WGS84 per la visualizzazione. Clic su un poligono per gli attributi.`);
+    stato(`Sistema di riferimento della fornitura riproiettato in coordinate geografiche per la visualizzazione. Clic su un poligono per gli attributi.`);
   }
 
   // ---------------------------------------------------------------- invio

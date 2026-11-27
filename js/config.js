@@ -20,10 +20,16 @@ window.CONFIG_MOCKUP = {
   // descriviUrl: tool "Descrivi template" del servizio valida_attributi, che ne restituisce la struttura.
   templateFiltro: "template",
   templateOwner: "portalmanager",
+  templateTag: "psc-template",
   templateCartella: "",
-  templateDefault: "1950a1414ba845e498a3bcf940fa6d3d",
   descriviUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/valida_attributi/GPServer/Descrivi%20template",
-  esportaShpUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/valida_attributi/GPServer/Esporta%20template%20shapefile",
+  // esportaUrl: tool "Esporta template" (shapefile o GeoPackage dal gdb del template)
+  esportaUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/valida_attributi/GPServer/Esporta%20template",
+  // appId: id dell'applicazione OAuth registrata sul Portal per l'accesso dell'amministratore (servizio Carica template);
+  //   vuoto = accesso con token incollato a mano
+  appId: "",
+  // crsTemplate: sistema di riferimento richiesto ai template (Allegato A: RDN2008 / UTM 33N)
+  crsTemplate: 7792,
   token: "",
   serverAncheShapefile: true,
 };
