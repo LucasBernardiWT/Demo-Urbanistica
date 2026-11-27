@@ -41,6 +41,16 @@ window.CONFIG_MOCKUP = {
   cartellaTemplate: "Draft Urbanistica",
   // crsTemplate: sistema di riferimento richiesto ai template (Allegato A: RDN2008 / UTM 33N)
   crsTemplate: 7792,
+  // Regole topologiche (js/regole_topologia.js): web tool UploadRegoleTopologia, tag degli item delle regole,
+  // valori proposti per le regole nuove (li decide il frontend: il web tool non ha valori predefiniti)
+  uploadRegoleTopologiaUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/UploadRegoleTopologia/GPServer/UploadRegoleTopologia",
+  regoleTag: "urb-regole-topologia",
+  regoleNuove: {
+    tolleranze: { area_minima_errore_m2: 4, distanza_confine_m: 20, sliver_area_m2: 0.36, sliver_sottigliezza: 0.03, cuspide_angolo_gradi: 1 },
+    livelli: { copertura_fuori_tolleranza: "AVVISO", contenimento_fuori_tolleranza: "AVVISO", multiparte: "AVVISO", cuspide: "AVVISO" },
+    confine_comunale: { servizio: "https://geohub-coll.regione.calabria.it/server/rest/services/viewer_catastale/istat_limiti/FeatureServer/0",
+                        campo_nome: "comune", campo_regione: "cod_reg", codice_regione: 18 },
+  },
   token: "",
   serverAncheShapefile: true,
 };

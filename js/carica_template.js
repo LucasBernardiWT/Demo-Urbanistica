@@ -29,6 +29,15 @@
     memo.set("psc-admin", sessione);
     await caricaCartelle();
     disegnaAccesso(); abilita();
+    await caricaRegole();
+  }
+  async function caricaRegole() { // file di regole topologiche dell'ambito scelto
+    if (!sessione) return;
+    const q = `tags:"${CFG.regoleTag}" AND tags:"ambito:${$("#tpl-ambito").value}"`;
+    const j = await (await fetch(`${portal}/sharing/rest/search?f=json&num=100&sortField=modified&sortOrder=desc&q=${encodeURIComponent(q)}&token=${encodeURIComponent(sessione.token)}`)).json();
+    $("#tpl-regole").innerHTML = `<option value="">— scegli le regole —</option>` +
+      (j.results || []).map((r) => `<option value="${esc(r.id)}">${esc(r.title)}</option>`).join("");
+    abilita();
   }
   function disegnaAccesso(errore) {
     const box = $("#admin-accesso");
@@ -134,7 +143,7 @@
     } catch (e) { archivio = null; $("#tpl-file").textContent = e.message; }
     abilita();
   }
-  function abilita() { $("#tpl-carica").disabled = !(sessione && archivio); }
+  function abilita() { $("#tpl-carica").disabled = !(sessione && archivio && $("#tpl-regole").value); }
 
   // ---------------------------------------------------------------- invio al servizio UploadTemplate
   async function gp(url, campi) {
@@ -162,7 +171,7 @@
       p(true, archivio.nome);
 
       p = passo("Controllo, struttura e caricamento sul Portal (UploadTemplate)");
-      let st = await gp(task + "/submitJob", { template: JSON.stringify({ itemID: up.item.itemID }), titolo, note: $("#tpl-note").value.trim(), ambito: $("#tpl-ambito").value, epsg: CFG.crsTemplate,
+      let st = await gp(task + "/submitJob", { template: JSON.stringify({ itemID: up.item.itemID }), titolo, note: $("#tpl-note").value.trim(), ambito: $("#tpl-ambito").value, epsg: CFG.crsTemplate, item_regole: $("#tpl-regole").value,
         token: sessione.token, cartella_portal: $("#tpl-cartella-portal").value, condivisione: $("#tpl-condivisione").value,
         gruppi: [...$("#tpl-gruppi").selectedOptions].map((o) => o.value).join(","), solo_verifica: "false" });
       const id = st.jobId;
@@ -196,4 +205,6 @@
   $("#tpl-titolo").addEventListener("input", abilita);
   $("#tpl-ambito").innerHTML = (CFG.ambiti || [["psc", "PSC"]]).map(([v, t]) => `<option value="${v}">${t}</option>`).join("");
   $("#tpl-carica").addEventListener("click", carica);
+  $("#tpl-ambito").addEventListener("change", () => caricaRegole().catch(() => {}));
+  $("#tpl-regole").addEventListener("change", abilita);
 })();

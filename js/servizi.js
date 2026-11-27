@@ -20,6 +20,7 @@ Promise.all([window.TAVOLE_PRONTE, window.MODELLO_PRONTO]).then(function () {
   const VISTE = {
     home: ["Pianificazione comunale – PSC/PSA", "Servizi per la redazione, la verifica e la consegna dei Piani Strutturali Comunali secondo il QTRP."],
     template: ["Template e regole", "Le versioni del template dei dati previsto dal QTRP, da scaricare in File Geodatabase, shapefile o GeoPackage."],
+    "regole-topologia": ["Regole topologiche", "Crea e modifica le regole topologiche da associare ai template (amministratore regionale)."],
     "carica-template": ["Carica template", "Pubblica sul Portal una nuova versione del template dei dati (amministratore regionale)."],
     verifica: ["Carica e verifica la fornitura", "Carica i dati del piano: vengono validati rispetto al template del QTRP e salvati con il report."],
     forniture: ["Le mie forniture", "Storico delle verifiche e versione di lavoro di ogni Comune."],

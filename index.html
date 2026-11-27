@@ -6,7 +6,7 @@
   <title>Consegna PSC/PSA – Geoportale Regione Calabria</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-italia@2.18.1/dist/css/bootstrap-italia.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-  <link rel="stylesheet" href="css/portale.css?v=20261127i">
+  <link rel="stylesheet" href="css/portale.css?v=20261127j">
 </head>
 <body>
 <a class="skip-link visually-hidden-focusable" href="#main-content">Vai al contenuto</a>
@@ -123,6 +123,11 @@
           <span class="s-titolo">Carica template</span>
           <span class="s-desc">Pubblica sul Portal una nuova versione del template dei dati (per l'amministratore regionale).</span>
           <span class="s-btn">Apri <svg class="ico" viewBox="0 0 24 24"><path d="M5 11h11.2l-4.6-4.6L13 5l7 7-7 7-1.4-1.4 4.6-4.6H5z"/></svg></span></a>
+        <a class="servizio" href="#/regole-topologia">
+          <svg viewBox="0 0 24 24"><path d="M4 4h7v7H4zM13 13h7v7h-7zM13 4h7v7h-7zM4 13h7v7H4z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+          <span class="s-titolo">Regole topologiche</span>
+          <span class="s-desc">Crea e modifica le regole topologiche da associare ai template (per l'amministratore regionale).</span>
+          <span class="s-btn">Apri <svg class="ico" viewBox="0 0 24 24"><path d="M5 11h11.2l-4.6-4.6L13 5l7 7-7 7-1.4-1.4 4.6-4.6H5z"/></svg></span></a>
         <a class="servizio disabilitato" aria-disabled="true">
           <svg viewBox="0 0 24 24"><path d="M9 5H5v14h14v-4M14 4h6v6M20 4l-9 9"/></svg>
           <span class="s-titolo">Istruttoria delle consegne</span>
@@ -183,6 +188,11 @@
             <select id="tpl-ambito" class="form-select form-select-sm"></select>
           </div>
           <div class="mb-3">
+            <label for="tpl-regole" class="form-label-plain">Regole topologiche</label>
+            <select id="tpl-regole" class="form-select form-select-sm"></select>
+            <div class="small text-muted mt-1">Obbligatorie: ValidaFornitura le userà per la topologia. Le crei e modifichi in <a href="#/regole-topologia">Regole topologiche</a>.</div>
+          </div>
+          <div class="mb-3">
             <label for="tpl-note" class="form-label-plain">Note della versione</label>
             <input id="tpl-note" class="form-control form-control-sm" type="text" maxlength="250" placeholder="es. Aggiunti i livelli QVT">
           </div>
@@ -218,6 +228,48 @@
           </div>
         </div>
       </div>
+    </section>
+    </div>
+
+    <!-- ===================== REGOLE TOPOLOGICHE (REGIONE) ===================== -->
+    <div class="vista" data-vista="regole-topologia" hidden>
+    <section class="mb-5">
+      <div id="rt-accesso" class="mb-3"></div>
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h2 class="h6 mb-0">File di regole sul Portal</h2>
+        <button id="rt-nuove" class="btn btn-primary btn-sm" type="button" disabled>Nuove regole</button>
+      </div>
+      <div id="rt-elenco"></div>
+      <div id="rt-editor" class="card card-body mt-4" hidden>
+        <h3 id="rt-intestazione" class="h6"></h3>
+        <div id="rt-avviso"></div>
+        <div class="row g-3 mb-3">
+          <div class="col-md-6"><label for="rt-titolo" class="form-label-plain">Titolo</label>
+            <input id="rt-titolo" class="form-control form-control-sm" type="text" placeholder="es. Regole topologiche PSC v1"></div>
+          <div class="col-md-3"><label for="rt-ambito" class="form-label-plain">Ambito</label>
+            <select id="rt-ambito" class="form-select form-select-sm"></select></div>
+          <div class="col-md-3"><label for="rt-condivisione" class="form-label-plain">Condivisione (regole nuove)</label>
+            <select id="rt-condivisione" class="form-select form-select-sm"><option value="tutti">Tutti (pubblico)</option>
+              <option value="organizzazione">Organizzazione</option><option value="privato">Privato</option></select></div>
+          <div class="col-md-6"><label for="rt-template" class="form-label-plain">Template di riferimento (layer e campi)</label>
+            <select id="rt-template" class="form-select form-select-sm"></select></div>
+          <div class="col-md-6"><label for="rt-note" class="form-label-plain">Note</label>
+            <input id="rt-note" class="form-control form-control-sm" type="text" maxlength="250"></div>
+        </div>
+        <h4 class="h6 mt-2">Layer controllati</h4>
+        <p class="small text-muted mb-1">Solo i layer poligonali. <strong>Disgiunzione</strong>: i record non devono sovrapporsi (tra tutti, o solo
+          se hanno lo stesso valore del campo scelto). <strong>Copertura</strong>: il layer deve coprire tutto il territorio comunale.</p>
+        <div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Controlla</th><th>Layer</th><th>Disgiunzione</th><th>Copertura</th></tr></thead>
+          <tbody id="rt-layer"></tbody></table></div>
+        <h4 class="h6 mt-2">Tolleranze</h4>
+        <div id="rt-toll" class="row g-3 mb-3"></div>
+        <h4 class="h6 mt-2">Gravità dei controlli</h4>
+        <p class="small text-muted mb-1">ERRORE rende la fornitura non conforme; AVVISO viene solo segnalato.</p>
+        <div id="rt-liv" class="row g-3 mb-3"></div>
+        <div class="d-flex gap-2"><button id="rt-salva" class="btn btn-primary btn-sm" type="button">Salva sul Portal</button>
+          <button id="rt-annulla" class="btn btn-outline-secondary btn-sm" type="button">Annulla</button></div>
+      </div>
+      <ol id="rt-passi" class="small mt-3"></ol>
     </section>
     </div>
 
@@ -489,13 +541,14 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/shpjs/3.6.3/shp.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/rbush@3.0.1/rbush.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js"></script>
-<script src="js/config.js?v=20261127i"></script>
-<script src="js/template_portal.js?v=20261127i"></script>
-<script src="js/tavole_qtrp.js?v=20261127i"></script>
-<script src="js/comuni_calabria.js?v=20261127i"></script>
-<script src="js/topologia.js?v=20261127i"></script>
-<script src="js/app.js?v=20261127i"></script>
-<script src="js/carica_template.js?v=20261127i"></script>
-<script src="js/servizi.js?v=20261127i"></script>
+<script src="js/config.js?v=20261127j"></script>
+<script src="js/template_portal.js?v=20261127j"></script>
+<script src="js/tavole_qtrp.js?v=20261127j"></script>
+<script src="js/comuni_calabria.js?v=20261127j"></script>
+<script src="js/topologia.js?v=20261127j"></script>
+<script src="js/app.js?v=20261127j"></script>
+<script src="js/carica_template.js?v=20261127j"></script>
+<script src="js/regole_topologia.js?v=20261127j"></script>
+<script src="js/servizi.js?v=20261127j"></script>
 </body>
 </html>
