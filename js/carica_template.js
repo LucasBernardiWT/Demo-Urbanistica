@@ -1,9 +1,9 @@
-// Servizio "Carica template" (amministratore regionale): pubblica sul Portal una nuova versione del template.
-//  1. accesso al Portal: OAuth con CONFIG_MOCKUP.appId (pagina oauth-callback.html), oppure token incollato;
+// Servizio "Carica template" (amministratore regionale): invia una nuova versione del template al web tool
+// UploadTemplate, che la controlla, ne ricava la struttura (JSON) e carica gdb e struttura sul Portal.
+//  1. accesso con l'account del Portal (OAuth 2, applicazione registrata: CONFIG_MOCKUP.appId; la pagina
+//     oauth-callback.html riceve il token e lo passa a questa finestra);
 //  2. il gdb scelto come cartella viene compresso nel browser (JSZip); uno zip viene usato cosi' com'e';
-//  3. upload come item "File Geodatabase" dell'utente, con il tag che lo fa comparire tra le versioni;
-//  4. controllo della struttura con il tool "Descrivi template" (sistema di riferimento = crsTemplate);
-//  5. se corretto, condivisione con tutti: diventa la versione corrente.
+//  3. lo zip va al servizio (uploads/upload), poi submitJob con titolo, note, cartella del Portal e token.
 (function () {
   "use strict";
   const CFG = window.CONFIG_MOCKUP || {};
@@ -11,76 +11,76 @@
   const $ = (s) => document.querySelector(s);
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const norm = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-  let sessione = null; // { token, utente }
+  const pausa = (ms) => new Promise((r) => setTimeout(r, ms));
+  const memo = { get(k) { try { return JSON.parse(sessionStorage.getItem(k)); } catch (e) { return null; } },
+                 set(k, v) { try { sessionStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage bloccato */ } },
+                 via(k) { try { sessionStorage.removeItem(k); } catch (e) { /* storage bloccato */ } } };
+  let sessione = null; // { token, utente, scade }
   let archivio = null; // { blob, nome }
 
-  async function rest(url, campi) {
-    const fd = new FormData();
-    for (const [k, v] of Object.entries({ ...campi, f: "json", token: sessione.token })) fd.append(k, v);
-    const j = await (await fetch(url, { method: "POST", body: fd })).json();
-    if (j.error) throw new Error(j.error.message || "errore del Portal");
-    return j;
-  }
-
-  // ---------------------------------------------------------------- accesso
-  async function usaToken(token) {
+  // ---------------------------------------------------------------- accesso al Portal (OAuth)
+  async function apriSessione(token, scadeSec) {
     const j = await (await fetch(`${portal}/sharing/rest/community/self?f=json&token=${encodeURIComponent(token)}`)).json();
-    if (j.error || !j.username) throw new Error(j.error ? j.error.message : "token non valido");
+    if (j.error || !j.username) throw new Error(j.error ? j.error.message : "accesso non riuscito");
     if (!(j.privileges || []).includes("portal:user:createItem")) throw new Error(`l'utente ${j.username} non può creare elementi sul Portal`);
-    sessione = { token, utente: j.username };
+    sessione = { token, utente: j.username, scade: Date.now() + (scadeSec || 7200) * 1000 };
+    memo.set("psc-admin", sessione);
+    await caricaCartelle();
     disegnaAccesso(); abilita();
   }
   function disegnaAccesso(errore) {
     const box = $("#admin-accesso");
+    $("#tpl-modulo").disabled = !sessione;
     if (sessione) {
       box.innerHTML = `<div class="msg msg-info">Accesso al Portal come <strong>${esc(sessione.utente)}</strong>. <a href="#" id="admin-esci">Esci</a></div>`;
-      $("#admin-esci").onclick = (e) => { e.preventDefault(); sessione = null; disegnaAccesso(); abilita(); };
+      $("#admin-esci").onclick = (e) => { e.preventDefault(); sessione = null; memo.via("psc-admin"); disegnaAccesso(); abilita(); };
       return;
     }
     const err = errore ? `<div class="small text-danger mt-1">${esc(errore)}</div>` : "";
-    if (CFG.appId) {
-      box.innerHTML = `<button id="admin-accedi" class="btn btn-outline-primary btn-sm" type="button">Accedi al Portal</button>${err}`;
-      $("#admin-accedi").onclick = accediOAuth;
-    } else {
-      box.innerHTML = `<label for="admin-token" class="form-label-plain">Token del Portal</label>
-        <div class="d-flex gap-2"><input id="admin-token" class="form-control form-control-sm" type="password" autocomplete="off" placeholder="Incolla un token dell'amministratore">
-        <button id="admin-usa" class="btn btn-outline-primary btn-sm" type="button">Usa</button></div>
-        <div class="small text-muted mt-1">L'accesso diretto con l'account del Portal si attiva registrando l'applicazione (appId nel config).</div>${err}`;
-      $("#admin-usa").onclick = () => usaToken($("#admin-token").value.trim()).catch((e) => disegnaAccesso(e.message));
+    if (!CFG.appId) {
+      box.innerHTML = `<div class="msg msg-warn">Accesso non disponibile: l'applicazione non è ancora registrata sul Portal
+        (manca <code>appId</code> in <code>js/config.js</code>).</div>${err}`;
+      return;
     }
+    box.innerHTML = `<button id="admin-accedi" class="btn btn-primary btn-sm" type="button">Accedi con l'account del Portal</button>
+      <div class="small text-muted mt-1">Si apre la pagina di accesso del Portal regionale.</div>${err}`;
+    $("#admin-accedi").onclick = accedi;
   }
-  function accediOAuth() {
+  function accedi() {
     const ritorno = new URL("oauth-callback.html", location.href).href;
-    const url = `${portal}/sharing/rest/oauth2/authorize?client_id=${encodeURIComponent(CFG.appId)}&response_type=token&expiration=120&redirect_uri=${encodeURIComponent(ritorno)}`;
-    const w = window.open(url, "oauth", "width=520,height=640");
+    const url = `${portal}/sharing/rest/oauth2/authorize?client_id=${encodeURIComponent(CFG.appId)}` +
+      `&response_type=token&expiration=120&redirect_uri=${encodeURIComponent(ritorno)}`;
+    const w = window.open(url, "oauth-portal", "width=520,height=680");
     const ricevi = (e) => {
       if (e.origin !== location.origin || !e.data || e.data.tipo !== "oauth") return;
       window.removeEventListener("message", ricevi);
       if (w) w.close();
-      if (e.data.errore) disegnaAccesso(e.data.errore);
-      else usaToken(e.data.token).catch((x) => disegnaAccesso(x.message));
+      if (e.data.errore || !e.data.token) disegnaAccesso(e.data.errore || "accesso annullato");
+      else apriSessione(e.data.token, e.data.scade).catch((x) => disegnaAccesso(x.message));
     };
     window.addEventListener("message", ricevi);
+  }
+  async function caricaCartelle() {
+    const j = await (await fetch(`${portal}/sharing/rest/content/users/${encodeURIComponent(sessione.utente)}?f=json&num=1&token=${encodeURIComponent(sessione.token)}`)).json();
+    const cartelle = (j.folders || []).map((c) => c.title).sort((a, b) => a.localeCompare(b, "it"));
+    const pred = CFG.cartellaTemplate || "Draft Urbanistica";
+    if (!cartelle.includes(pred)) cartelle.unshift(pred);
+    $("#tpl-cartella-portal").innerHTML = cartelle.map((c) => `<option${c === pred ? " selected" : ""}>${esc(c)}</option>`).join("");
   }
 
   // ---------------------------------------------------------------- scelta del template
   async function daCartella(files) {
-    const lista = [...files];
-    const primo = lista[0] && lista[0].webkitRelativePath.split("/");
-    if (!primo) throw new Error("cartella vuota");
-    // la cartella scelta e' il .gdb, oppure lo contiene
-    const gdb = lista.map((f) => f.webkitRelativePath.split("/")).map((p) => p.findIndex((x) => /\.gdb$/i.test(x))).find((i) => i >= 0);
-    if (gdb === undefined) throw new Error("la cartella non contiene un File Geodatabase (.gdb)");
     const zip = new JSZip();
     let nome = null;
-    for (const f of lista) {
+    for (const f of files) {
       const p = f.webkitRelativePath.split("/");
       const i = p.findIndex((x) => /\.gdb$/i.test(x));
       if (i < 0 || /\.lock$/i.test(f.name)) continue;
       nome = nome || p[i];
       zip.file(p.slice(i).join("/"), f);
     }
-    return { blob: await zip.generateAsync({ type: "blob", compression: "DEFLATE" }), nome: nome.replace(/\.gdb$/i, "") + ".gdb.zip" };
+    if (!nome) throw new Error("la cartella non contiene un File Geodatabase (.gdb)");
+    return { blob: await zip.generateAsync({ type: "blob", compression: "DEFLATE" }), nome: nome + ".zip" };
   }
   async function daZip(file) {
     const zip = await JSZip.loadAsync(file);
@@ -97,7 +97,14 @@
   }
   function abilita() { $("#tpl-carica").disabled = !(sessione && archivio && $("#tpl-titolo").value.trim()); }
 
-  // ---------------------------------------------------------------- caricamento
+  // ---------------------------------------------------------------- invio al servizio UploadTemplate
+  async function gp(url, campi) {
+    const fd = new FormData();
+    for (const [k, v] of Object.entries({ ...campi, f: "json", token: sessione.token })) fd.append(k, v);
+    const j = await (await fetch(url, { method: "POST", body: fd })).json();
+    if (j.error) throw new Error(j.error.message || "errore del servizio");
+    return j;
+  }
   function passo(testo) {
     const li = document.createElement("li"); li.innerHTML = `${esc(testo)} <span class="text-muted">…</span>`;
     $("#tpl-passi").appendChild(li);
@@ -106,30 +113,32 @@
   async function carica() {
     const titolo = $("#tpl-titolo").value.trim(), filtro = CFG.templateFiltro || "template";
     $("#tpl-passi").innerHTML = "";
+    if (sessione.scade < Date.now()) { sessione = null; memo.via("psc-admin"); disegnaAccesso("sessione scaduta: accedi di nuovo"); return; }
     if (!norm(titolo).includes(norm(filtro))) { passo("Controllo del titolo")(false, `deve contenere “${filtro}”`); return; }
     $("#tpl-carica").disabled = true;
-    let p, item = null;
+    const task = CFG.uploadTemplateUrl.replace(/\/+$/, ""), servizio = task.replace(/\/[^/]+$/, "");
+    let p;
     try {
-      p = passo("Caricamento sul Portal");
-      const r = await rest(`${portal}/sharing/rest/content/users/${encodeURIComponent(sessione.utente)}/addItem`, {
-        file: new File([archivio.blob], archivio.nome, { type: "application/zip" }), type: "File Geodatabase",
-        title: titolo, snippet: $("#tpl-note").value.trim(), tags: CFG.templateTag || "template" });
-      item = r.id; p(true, "elemento " + item);
+      p = passo("Invio del template al servizio");
+      const up = await gp(servizio + "/uploads/upload", { file: new File([archivio.blob], archivio.nome, { type: "application/zip" }) });
+      p(true, archivio.nome);
 
-      p = passo("Controllo della struttura (Descrivi template)");
-      const m = await window.TEMPLATE.descrivi({ id: item, modificato: Date.now() }, sessione.token);
-      if (CFG.crsTemplate && m.epsg !== CFG.crsTemplate) {
-        p(false, `${m.layer.length} layer, EPSG:${m.epsg} invece di EPSG:${CFG.crsTemplate}: template non condiviso, eliminalo o correggilo`);
-        return;
+      p = passo("Controllo, struttura e caricamento sul Portal (UploadTemplate)");
+      let st = await gp(task + "/submitJob", { template: JSON.stringify({ itemID: up.item.itemID }), titolo, note: $("#tpl-note").value.trim(),
+        token: sessione.token, cartella_portal: $("#tpl-cartella-portal").value, condividi: "true", solo_verifica: "false" });
+      const id = st.jobId;
+      for (let i = 0; i < 200 && !/Succeeded|Failed|Cancelled|TimedOut/.test(st.jobStatus); i++) { await pausa(2000); st = await gp(`${task}/jobs/${id}`, {}); }
+      if (st.jobStatus !== "esriJobSucceeded") {
+        const m = (st.messages || []).filter((x) => /Error|Warning/.test(x.type)).map((x) => x.description).join(" · ");
+        throw new Error(m || st.jobStatus);
       }
-      p(true, `${m.layer.length} layer, ${m.crs} (EPSG:${m.epsg})`);
-
-      p = passo("Condivisione con tutti");
-      await rest(`${portal}/sharing/rest/content/users/${encodeURIComponent(sessione.utente)}/items/${item}/share`, { everyone: "true", org: "true" });
-      p(true, "");
+      const r = async (n) => (await gp(`${task}/jobs/${id}/results/${n}`, {})).value;
+      const [gdb, json, testo] = [await r("item_template"), await r("item_struttura"), await r("struttura_testo")];
+      const m = typeof testo === "string" ? JSON.parse(testo) : testo;
+      p(true, `${m.layer.length} layer, EPSG:${m.epsg}; template ${gdb}, struttura ${json}`);
 
       p = passo("Aggiornamento dell'elenco delle versioni");
-      await window.TEMPLATE.aggiorna();
+      if (window.TEMPLATE) await window.TEMPLATE.aggiorna();
       p(true, `“${titolo}” è la versione corrente`);
       archivio = null; $("#tpl-file").textContent = "Nessun file scelto"; $("#tpl-titolo").value = ""; $("#tpl-note").value = "";
     } catch (e) {
@@ -138,7 +147,9 @@
   }
 
   if (!$("#admin-accesso")) return;
-  disegnaAccesso();
+  const salvata = memo.get("psc-admin");
+  if (salvata && salvata.scade > Date.now()) apriSessione(salvata.token, (salvata.scade - Date.now()) / 1000).catch(() => disegnaAccesso());
+  else disegnaAccesso();
   $("#tpl-cartella").addEventListener("change", (e) => e.target.files.length && scegli(daCartella(e.target.files)));
   $("#tpl-zip").addEventListener("change", (e) => e.target.files[0] && scegli(daZip(e.target.files[0])));
   $("#tpl-titolo").addEventListener("input", abilita);

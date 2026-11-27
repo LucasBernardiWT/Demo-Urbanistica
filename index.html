@@ -6,7 +6,7 @@
   <title>Consegna PSC/PSA – Geoportale Regione Calabria</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-italia@2.18.1/dist/css/bootstrap-italia.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-  <link rel="stylesheet" href="css/portale.css?v=20261127a">
+  <link rel="stylesheet" href="css/portale.css?v=20261127b">
 </head>
 <body>
 <a class="skip-link visually-hidden-focusable" href="#main-content">Vai al contenuto</a>
@@ -164,6 +164,7 @@
       <div class="row g-4">
         <div class="col-lg-7">
           <div id="admin-accesso" class="mb-3"></div>
+          <fieldset id="tpl-modulo" disabled>
           <div class="mb-3">
             <label class="form-label-plain">Template (File Geodatabase)</label>
             <div class="d-flex flex-wrap gap-2 align-items-center">
@@ -171,7 +172,7 @@
               <label class="btn btn-outline-primary btn-sm mb-0">oppure uno zip<input id="tpl-zip" type="file" accept=".zip" hidden></label>
               <span id="tpl-file" class="small text-muted">Nessun file scelto</span>
             </div>
-            <div class="small text-muted mt-1">Se scegli la cartella, viene compressa nel browser prima del caricamento.</div>
+            <div class="small text-muted mt-1">Se scegli la cartella, viene compressa nel browser prima dell'invio.</div>
           </div>
           <div class="mb-3">
             <label for="tpl-titolo" class="form-label-plain">Titolo della versione</label>
@@ -180,17 +181,22 @@
           </div>
           <div class="mb-3">
             <label for="tpl-note" class="form-label-plain">Note della versione</label>
-            <input id="tpl-note" class="form-control form-control-sm" type="text" maxlength="250" placeholder="es. Aggiunti i livelli QVT; campo Note portato a 250 caratteri">
+            <input id="tpl-note" class="form-control form-control-sm" type="text" maxlength="250" placeholder="es. Aggiunti i livelli QVT">
+          </div>
+          <div class="mb-3">
+            <label for="tpl-cartella-portal" class="form-label-plain">Cartella del Portal</label>
+            <select id="tpl-cartella-portal" class="form-select form-select-sm"></select>
           </div>
           <button id="tpl-carica" class="btn btn-primary btn-sm" type="button" disabled>Carica sul Portal</button>
+          </fieldset>
           <ol id="tpl-passi" class="small mt-3"></ol>
         </div>
         <div class="col-lg-5">
           <div class="callout note">
             <div class="callout-title"><svg class="ico" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 15h-2v-6h2v6Zm0-8h-2V7h2v2Z"/></svg> Come funziona</div>
-            <p>Il template viene caricato come elemento File Geodatabase del Portal, nell'account con cui accedi, con il tag che lo fa comparire tra le versioni.</p>
-            <p>Dopo il caricamento il servizio di validazione ne legge la struttura: se il sistema di riferimento non è RDN2008 (EPSG:7792) viene segnalato e il template non viene condiviso.</p>
-            <p class="mb-0">Se è corretto, viene condiviso con tutti e diventa la versione corrente per i Comuni.</p>
+            <p>Accedi con il tuo account del Portal. Il template viene inviato al servizio <strong>UploadTemplate</strong>, che controlla che tutti i layer siano in RDN2008 (EPSG:7792): se non lo sono, non viene caricato nulla.</p>
+            <p>Il servizio ricava la struttura del template (layer, campi, codelist e dipendenze) e carica nella cartella scelta due elementi collegati: il File Geodatabase e il JSON della struttura.</p>
+            <p class="mb-0">Entrambi vengono condivisi con tutti: il template diventa la versione corrente per i Comuni.</p>
           </div>
         </div>
       </div>
@@ -465,13 +471,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/shpjs/3.6.3/shp.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/rbush@3.0.1/rbush.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js"></script>
-<script src="js/config.js?v=20261127a"></script>
-<script src="js/template_portal.js?v=20261127a"></script>
-<script src="js/tavole_qtrp.js?v=20261127a"></script>
-<script src="js/comuni_calabria.js?v=20261127a"></script>
-<script src="js/topologia.js?v=20261127a"></script>
-<script src="js/app.js?v=20261127a"></script>
-<script src="js/carica_template.js?v=20261127a"></script>
-<script src="js/servizi.js?v=20261127a"></script>
+<script src="js/config.js?v=20261127b"></script>
+<script src="js/template_portal.js?v=20261127b"></script>
+<script src="js/tavole_qtrp.js?v=20261127b"></script>
+<script src="js/comuni_calabria.js?v=20261127b"></script>
+<script src="js/topologia.js?v=20261127b"></script>
+<script src="js/app.js?v=20261127b"></script>
+<script src="js/carica_template.js?v=20261127b"></script>
+<script src="js/servizi.js?v=20261127b"></script>
 </body>
 </html>

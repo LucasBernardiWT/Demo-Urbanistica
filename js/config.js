@@ -1,9 +1,9 @@
 // Configurazione del mockup.
-// gpUrl: URL del task del web tool "Valida attributi" (3 - Scripts/ValidazioneAttributi.pyt) su ArcGIS Enterprise:
+// gpUrl: URL del task del web tool "Valida attributi" (3 - Scripts/ValidaAttributi.pyt) su ArcGIS Enterprise:
 //   https://<server>/server/rest/services/<cartella>/<servizio>/GPServer/<nome visualizzato del task, con %20>
 //   Il servizio deve avere la capacità "Uploads" attiva. Vuoto = non collegato: i gdb non vengono controllati,
 //   gli shapefile si controllano nel browser.
-// topoUrl: URL del task del web tool "Valida topologia" (3 - Scripts/ValidazioneTopologia.pyt); vuoto = non collegato.
+// topoUrl: URL del task del web tool "Valida topologia" (3 - Scripts/ValidaTopologia.pyt); vuoto = non collegato.
 //   Gli shapefile sono controllati nel browser (js/topologia.js); il servizio serve per i File Geodatabase.
 // Template e regole dei due servizi sono item del Portal: si aggiornano li', senza toccare il mockup.
 // tavoleItem: item del Portal con regole_tavole_qtrp.json (catalogo tavole e layer minimi); vuoto = copia locale
@@ -17,17 +17,19 @@ window.CONFIG_MOCKUP = {
   tavoleItem: "ec041abfa08946c1a00aef046fb87886",
   // Template di riferimento (js/template_portal.js): item "File Geodatabase" del Portal con questa sottostringa nel
   // titolo (senza distinzione di maiuscole), nella cartella templateCartella (id) o del proprietario templateOwner.
-  // descriviUrl: tool "Descrivi template" del servizio valida_attributi, che ne restituisce la struttura.
+  // descriviUrl: servizio descrivi_template, che restituisce la struttura del template.
   templateFiltro: "template",
   templateOwner: "portalmanager",
   templateTag: "psc-template",
   templateCartella: "",
-  descriviUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/valida_attributi/GPServer/Descrivi%20template",
-  // esportaUrl: tool "Esporta template" (shapefile o GeoPackage dal gdb del template)
-  esportaUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/valida_attributi/GPServer/Esporta%20template",
-  // appId: id dell'applicazione OAuth registrata sul Portal per l'accesso dell'amministratore (servizio Carica template);
-  //   vuoto = accesso con token incollato a mano
+  descriviUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/descrivi_template/GPServer/Descrivi%20template",
+  // esportaUrl: servizio esporta_template (shapefile o GeoPackage dal gdb del template)
+  esportaUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/esporta_template/GPServer/Esporta%20template",
+  // appId: id dell'applicazione OAuth registrata sul Portal (accesso con l'account del Portal); vuoto = accesso non attivo
   appId: "",
+  // uploadTemplateUrl: web tool UploadTemplate; cartellaTemplate: cartella del Portal proposta per i nuovi template
+  uploadTemplateUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/upload_template/GPServer/UploadTemplate",
+  cartellaTemplate: "Draft Urbanistica",
   // crsTemplate: sistema di riferimento richiesto ai template (Allegato A: RDN2008 / UTM 33N)
   crsTemplate: 7792,
   token: "",
