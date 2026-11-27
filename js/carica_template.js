@@ -134,7 +134,7 @@
     } catch (e) { archivio = null; $("#tpl-file").textContent = e.message; }
     abilita();
   }
-  function abilita() { $("#tpl-carica").disabled = !(sessione && archivio && $("#tpl-titolo").value.trim()); }
+  function abilita() { $("#tpl-carica").disabled = !(sessione && archivio); }
 
   // ---------------------------------------------------------------- invio al servizio UploadTemplate
   async function gp(url, campi) {
@@ -153,7 +153,6 @@
     const titolo = $("#tpl-titolo").value.trim(), filtro = CFG.templateFiltro || "template";
     $("#tpl-passi").innerHTML = "";
     if (sessione.scade < Date.now()) { sessione = null; memo.via("psc-admin"); disegnaAccesso("sessione scaduta: accedi di nuovo"); return; }
-    if (!norm(titolo).includes(norm(filtro))) { passo("Controllo del titolo")(false, `deve contenere “${filtro}”`); return; }
     $("#tpl-carica").disabled = true;
     const task = CFG.uploadTemplateUrl.replace(/\/+$/, ""), servizio = task.replace(/\/[^/]+$/, "");
     let p;
@@ -163,7 +162,7 @@
       p(true, archivio.nome);
 
       p = passo("Controllo, struttura e caricamento sul Portal (UploadTemplate)");
-      let st = await gp(task + "/submitJob", { template: JSON.stringify({ itemID: up.item.itemID }), titolo, note: $("#tpl-note").value.trim(),
+      let st = await gp(task + "/submitJob", { template: JSON.stringify({ itemID: up.item.itemID }), titolo, note: $("#tpl-note").value.trim(), ambito: $("#tpl-ambito").value,
         token: sessione.token, cartella_portal: $("#tpl-cartella-portal").value, condivisione: $("#tpl-condivisione").value,
         gruppi: [...$("#tpl-gruppi").selectedOptions].map((o) => o.value).join(","), solo_verifica: "false" });
       const id = st.jobId;
@@ -181,7 +180,7 @@
 
       p = passo("Aggiornamento dell'elenco delle versioni");
       if (window.TEMPLATE) await window.TEMPLATE.aggiorna();
-      p(true, $("#tpl-condivisione").value === "tutti" ? `“${titolo}” è la versione corrente` : `“${titolo}” caricato (${$("#tpl-condivisione").value})`);
+      p(true, $("#tpl-condivisione").value === "tutti" ? `“${titolo || "Template"}” è la versione corrente` : `“${titolo || "Template"}” caricato (${$("#tpl-condivisione").value})`);
       archivio = null; $("#tpl-file").textContent = "Nessun file scelto"; $("#tpl-titolo").value = ""; $("#tpl-note").value = "";
     } catch (e) {
       if (p) p(false, e.message);
@@ -195,5 +194,6 @@
   $("#tpl-cartella").addEventListener("change", (e) => e.target.files.length && scegli(daCartella(e.target.files)));
   $("#tpl-zip").addEventListener("change", (e) => e.target.files[0] && scegli(daZip(e.target.files[0])));
   $("#tpl-titolo").addEventListener("input", abilita);
+  $("#tpl-ambito").innerHTML = (CFG.ambiti || [["psc", "PSC"]]).map(([v, t]) => `<option value="${v}">${t}</option>`).join("");
   $("#tpl-carica").addEventListener("click", carica);
 })();

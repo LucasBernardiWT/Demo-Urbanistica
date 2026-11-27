@@ -19,14 +19,18 @@
   window.REGOLE_QTRP = { origine: "", layer: [] };
 
   async function elenco() {
-    const chi = [CFG.templateOwner && `owner:${CFG.templateOwner}`, CFG.templateTag && `tags:"${CFG.templateTag}"`].filter(Boolean);
+    // nuovi template: tag generale + tag dell'ambito; vecchi (senza ambito): proprietario e titolo con "template"
+    const nuovi = CFG.templateTag && `(tags:"${CFG.templateTag}" AND tags:"ambito:${CFG.ambitoPagina || "psc"}")`;
+    const chi = [nuovi, CFG.templateOwner && `owner:${CFG.templateOwner}`].filter(Boolean);
     let q = 'type:"File Geodatabase"' + (chi.length ? ` AND (${chi.join(" OR ")})` : "");
     if (CFG.templateCartella) q += ` AND ownerfolder:${CFG.templateCartella}`;
     const r = await fetch(`${portal}/sharing/rest/search?f=json&num=100&sortField=created&sortOrder=desc&q=${encodeURIComponent(q)}&_=${Date.now()}`);
     const j = await r.json();
     if (j.error) throw new Error(j.error.message);
     const filtro = norm(CFG.templateFiltro || "template");
-    return (j.results || []).filter((x) => norm(x.title).includes(filtro))
+    const ambito = `ambito:${CFG.ambitoPagina || "psc"}`;
+    return (j.results || []).filter((x) => (x.tags || []).includes(ambito)
+        || (!(x.tags || []).some((t) => t.startsWith("ambito:")) && norm(x.title).includes(filtro)))
       .map((x) => ({ id: x.id, titolo: x.title, modificato: x.modified, creato: x.created, note: x.snippet || "", proprietario: x.owner }));
   }
 

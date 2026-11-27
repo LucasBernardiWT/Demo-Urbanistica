@@ -20,7 +20,13 @@ window.CONFIG_MOCKUP = {
   // descriviUrl: servizio descrivi_template, che restituisce la struttura del template.
   templateFiltro: "template",
   templateOwner: "portalmanager",
-  templateTag: "psc-template",
+  templateTag: "urb-template",
+  // ambiti (destinazione d'uso) dei template: il tool accetta qualsiasi valore, la lista si decide qui.
+  // ambitoPagina: ambito dei template mostrati nella pagina Template e usati per i controlli
+  ambiti: [["psc", "PSC / PSA – Piano Strutturale Comunale"], ["pot", "POT – Piano Operativo Temporale"],
+           ["ptcp", "PTCP – Piano Territoriale di Coordinamento Provinciale"], ["qtrp", "QTRP e piani regionali"],
+           ["settore", "Piani di settore regionali"]],
+  ambitoPagina: "psc",
   templateCartella: "",
   descriviUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/descrivi_template/GPServer/Descrivi%20template",
   // downloadTemplateUrl: web tool DownloadTemplate (template in shapefile o GeoPackage, generati dal gdb)
