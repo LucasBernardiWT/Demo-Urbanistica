@@ -216,3 +216,6 @@ h4, .h4, h5, .h5 { font-size: 1.1rem; } h6, .h6 { font-size: 1rem; }
 
 /* l'attributo hidden prevale sulle classi di layout di Bootstrap (es. d-flex) */
 [hidden] { display: none !important; }
+/* barra con l'avanzamento reale del job (fasi di ValidaFornitura) */
+#stato-elaborazione .progress { height: 6px; overflow: hidden; background: #e6f0fa; }
+#stato-elaborazione .progress:not(.progress-indeterminate) .progress-bar { height: 100%; background: var(--blu); transition: width .4s ease; }

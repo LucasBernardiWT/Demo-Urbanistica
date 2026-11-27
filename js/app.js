@@ -360,7 +360,7 @@
     const job = await gp(task + "/submitJob", sub);
     let st = job;
     for (let i = 0; i < 900 && !/Succeeded|Failed|Cancelled|TimedOut/.test(st.jobStatus); i++) {
-      avanzamento(st.jobStatus.replace("esriJob", ""));
+      avanzamento(st.jobStatus.replace("esriJob", ""), st.messages || []);
       await pausa(2000);
       st = await gp(`${task}/jobs/${job.jobId}`);
     }
@@ -388,7 +388,8 @@
       token: s.token, item_fornitura: "", formato_errori: formato, item_template: tpl.id,
       cartella_portal: $("#vf-cartella").value, condivisione: $("#vf-condivisione").value,
       gruppi: [...$("#vf-gruppi").selectedOptions].map((o) => o.value).join(","), registro_url: CFG.registroUrl || "", solo_verifica: "false",
-    }, ["report_testo", "report_pdf", "errori_zip", "out_item_fornitura"], (x) => stato(`Controllo di attributi e topologia sul server (${x}), può richiedere alcuni minuti…`));
+    }, ["report_testo", "report_pdf", "errori_zip", "out_item_fornitura"], avanzamentoVf);
+    barra(null);
     const rep = daJson(r.report_testo);
     mostraDaServer(rep, file.name, r.report_pdf);
     const topo = { esito: rep.topologia.esito, errori: rep.topologia.errori, avvisi: rep.topologia.avvisi, formato };
@@ -402,6 +403,37 @@
     }
     esitoFinale(topo, { pdf: r.report_pdf, zip: r.errori_zip }, null);
   }
+  // avanzamento dai messaggi del job: "FASE n/6 – testo", "LAYER i/N – nome", "Attributi: x errori, y avvisi"
+  // (servizio ValidaFornitura con livello dei messaggi "Info"; senza, resta l'indicatore generico)
+  const ATTRIBUTI = ["completezza", "crs", "struttura", "valori", "dipendenze"];
+  function barra(frazione) {
+    const p = document.querySelector("#stato-elaborazione .progress"), b = p && p.querySelector(".progress-bar");
+    if (!b) return;
+    p.classList.toggle("progress-indeterminate", frazione === null);
+    b.style.width = frazione === null ? "" : `${Math.round(frazione * 100)}%`;
+  }
+  function avanzamentoVf(statoJob, messaggi) {
+    const testi = messaggi.map((m) => m.description || "");
+    const ultima = [...testi].reverse().find((t) => /^FASE \d+\/\d+/.test(t));
+    if (!ultima) { stato(`Controllo in corso sul server (${statoJob})…`); return; }
+    const [, n, tot, testo] = /^FASE (\d+)\/(\d+) – (.*)$/.exec(ultima) || [];
+    const f = Number(n), N = Number(tot) || 6;
+    const esito = (re) => { const t = testi.find((x) => re.test(x)); const m = t && /(\d+) errori, (\d+) avvisi/.exec(t); return m ? (+m[1] ? "ko" : +m[2] ? "warn" : "ok") : null; };
+    statoControllo("archivio", f >= 2 ? "ok" : "run");
+    const att = esito(/^Attributi:/);
+    ATTRIBUTI.forEach((k) => statoControllo(k, att || (f >= 3 ? "run" : "")));
+    const topo = esito(/^Topologia:/);
+    statoControllo("topologia", topo || (f >= 4 ? "run" : ""));
+    let dettaglio = "", quota = (f - 1) / N;
+    if (f === 4) { // controllo topologico: avanzamento per layer
+      const l = [...testi].reverse().find((t) => /^LAYER \d+\/\d+/.test(t));
+      const m = l && /^LAYER (\d+)\/(\d+) – (.*)$/.exec(l);
+      if (m) { dettaglio = ` – ${m[3]} (${m[1]} di ${m[2]})`; quota += ((+m[1] - 1) / +m[2]) / N; }
+    }
+    barra(quota);
+    stato(`Fase ${f} di ${N}: ${testo}${dettaglio}…`);
+  }
+  window.__avanzamentoVf = avanzamentoVf; // usato per le prove senza server
   async function pubblicazioneVf() { // cartelle e gruppi dell'utente per il salvataggio della fornitura
     const s = window.ACCESSO && window.ACCESSO.sessione(), box = $("#vf-accesso");
     if (!box) return;
