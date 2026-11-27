@@ -11,8 +11,13 @@
 // token: token ArcGIS se i servizi non sono pubblici (vuoto se condivisi con tutti).
 // serverAncheShapefile: true = anche gli shapefile vengono controllati sul server invece che nel browser.
 window.CONFIG_MOCKUP = {
-  gpUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/valida_attributi/GPServer/Valida%20attributi",
-  topoUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/valida_topologia/GPServer/Valida%20topologia",
+  // gpUrl/topoUrl: vecchi servizi separati (non piu' pubblicati), sostituiti da validaFornituraUrl
+  gpUrl: "",
+  topoUrl: "",
+  // validaFornituraUrl: web tool ValidaFornitura (attributi + topologia + salvataggio sul Portal, un solo job);
+  // registroUrl: tabella hosted del registro forniture (vuoto = non ancora pubblicata)
+  validaFornituraUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/ValidaFornitura/GPServer/ValidaFornitura",
+  registroUrl: "",
   portalUrl: "https://geohub-coll.regione.calabria.it/portal",
   tavoleItem: "ec041abfa08946c1a00aef046fb87886",
   // Template di riferimento (js/template_portal.js): item "File Geodatabase" del Portal con questa sottostringa nel

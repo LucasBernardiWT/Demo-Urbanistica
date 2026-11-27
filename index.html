@@ -6,7 +6,7 @@
   <title>Consegna PSC/PSA – Geoportale Regione Calabria</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-italia@2.18.1/dist/css/bootstrap-italia.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-  <link rel="stylesheet" href="css/portale.css?v=20261127o">
+  <link rel="stylesheet" href="css/portale.css?v=20261127p">
 </head>
 <body>
 <a class="skip-link visually-hidden-focusable" href="#main-content">Vai al contenuto</a>
@@ -354,8 +354,18 @@
               <label for="formato-errori" class="form-label-plain">Pacchetto degli errori topologici</label>
               <select id="formato-errori" class="form-select form-select-sm">
                 <option value="shp">Shapefile</option><option value="gdb">File Geodatabase</option><option value="gpkg">GeoPackage</option></select>
-              <div class="small text-muted mt-1">Shapefile, File Geodatabase e GeoPackage sono controllati dai servizi regionali, con le regole del template di riferimento pubblicato sul Portal.</div>
+              <div class="small text-muted mt-1">Shapefile, File Geodatabase e GeoPackage sono controllati dal servizio regionale ValidaFornitura, con il template e le sue regole topologiche pubblicati sul Portal.</div>
             </div>
+          </div>
+          <div id="vf-accesso" class="mb-2"></div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-4"><label for="vf-cartella" class="form-label-plain">Cartella del Portal</label>
+              <select id="vf-cartella" class="form-select form-select-sm"></select></div>
+            <div class="col-md-3"><label for="vf-condivisione" class="form-label-plain">Condivisione</label>
+              <select id="vf-condivisione" class="form-select form-select-sm"><option value="" selected disabled>— scegli —</option>
+                <option value="privato">Privato</option><option value="organizzazione">Organizzazione</option><option value="tutti">Tutti (pubblico)</option></select></div>
+            <div class="col-md-5"><label for="vf-gruppi" class="form-label-plain">Gruppi <span class="text-muted">(facoltativo)</span></label>
+              <select id="vf-gruppi" class="form-select form-select-sm" multiple size="2"></select></div>
           </div>
           <span class="form-label-plain">Archivio .zip</span>
           <div id="dropzone" class="dropzone-barra" tabindex="0" role="button" aria-label="Seleziona o trascina l'archivio zip della fornitura">
@@ -590,16 +600,16 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/shpjs/3.6.3/shp.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/rbush@3.0.1/rbush.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js"></script>
-<script src="js/config.js?v=20261127o"></script>
-<script src="js/accesso.js?v=20261127o"></script>
-<script src="js/template_portal.js?v=20261127o"></script>
-<script src="js/tavole_qtrp.js?v=20261127o"></script>
-<script src="js/comuni_calabria.js?v=20261127o"></script>
-<script src="js/topologia.js?v=20261127o"></script>
-<script src="js/app.js?v=20261127o"></script>
-<script src="js/carica_template.js?v=20261127o"></script>
-<script src="js/regole_topologia.js?v=20261127o"></script>
-<script src="js/template_regole.js?v=20261127o"></script>
-<script src="js/servizi.js?v=20261127o"></script>
+<script src="js/config.js?v=20261127p"></script>
+<script src="js/accesso.js?v=20261127p"></script>
+<script src="js/template_portal.js?v=20261127p"></script>
+<script src="js/tavole_qtrp.js?v=20261127p"></script>
+<script src="js/comuni_calabria.js?v=20261127p"></script>
+<script src="js/topologia.js?v=20261127p"></script>
+<script src="js/app.js?v=20261127p"></script>
+<script src="js/carica_template.js?v=20261127p"></script>
+<script src="js/regole_topologia.js?v=20261127p"></script>
+<script src="js/template_regole.js?v=20261127p"></script>
+<script src="js/servizi.js?v=20261127p"></script>
 </body>
 </html>

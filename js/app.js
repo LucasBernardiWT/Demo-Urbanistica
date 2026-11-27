@@ -197,6 +197,11 @@
       const nomi = Object.keys(zip.files).filter((n) => !zip.files[n].dir);
       await pausa(400);
       const isGdb = nomi.some((n) => /\.gdb\//i.test(n));
+      if (CFG.validaFornituraUrl) {
+        statoControllo("archivio", "ok");
+        await validaSulServer(file);
+        return;
+      }
       if (CFG.gpUrl && (isGdb || CFG.serverAncheShapefile)) {
         statoControllo("archivio", "ok");
         await controllaSulServer(file);
@@ -359,11 +364,60 @@
       await pausa(2000);
       st = await gp(`${task}/jobs/${job.jobId}`);
     }
-    if (st.jobStatus !== "esriJobSucceeded") throw Object.assign(new Error("il servizio ha restituito " + st.jobStatus), { servizio: true });
+    if (st.jobStatus !== "esriJobSucceeded") { // solo i messaggi d'errore del tool (codice e motivo)
+      const m = (st.messages || []).filter((x) => /Error/.test(x.type) && !/^Failed/.test(x.description)).map((x) => x.description.trim()).join(" · ");
+      throw Object.assign(new Error(m || "il servizio ha restituito " + st.jobStatus), { servizio: true });
+    }
     const out = {};
     for (const r of risultati) { const x = await gp(`${task}/jobs/${job.jobId}/results/${r}`); out[r] = x.value && (x.value.url || x.value); }
     return out;
   }
+  // ValidaFornitura: un solo job per attributi, topologia e salvataggio (fornitura, report, pacchetto errori)
+  // sul Portal con il token dell'utente; cartella, condivisione e gruppi scelti nella pagina
+  async function validaSulServer(file) {
+    const s = window.ACCESSO && window.ACCESSO.sessione();
+    if (!s) throw Object.assign(new Error("accedi al Portal con il pulsante in alto: la fornitura viene salvata nel tuo account"), { servizio: true });
+    const tpl = window.TEMPLATE && window.TEMPLATE.attivo;
+    if (!tpl) throw Object.assign(new Error("nessun template di riferimento disponibile"), { servizio: true });
+    if (!$("#vf-cartella").value || !$("#vf-condivisione").value) throw Object.assign(new Error("scegli cartella del Portal e livello di condivisione"), { servizio: true });
+    ["completezza", "crs", "struttura", "valori", "dipendenze", "topologia"].forEach((k) => statoControllo(k, "run"));
+    stato("Invio della fornitura al servizio ValidaFornitura…");
+    const formato = $("#formato-errori").value;
+    const r = await eseguiJob(CFG.validaFornituraUrl, file, {
+      comune: comuneValido() || $("#comune").value.trim(), ambito: CFG.ambitoPagina, titolo: $("#titolo-fornitura").value.trim(),
+      token: s.token, item_fornitura: "", formato_errori: formato, item_template: tpl.id,
+      cartella_portal: $("#vf-cartella").value, condivisione: $("#vf-condivisione").value,
+      gruppi: [...$("#vf-gruppi").selectedOptions].map((o) => o.value).join(","), registro_url: CFG.registroUrl || "", solo_verifica: "false",
+    }, ["report_testo", "report_pdf", "errori_zip", "out_item_fornitura"], (x) => stato(`Controllo di attributi e topologia sul server (${x}), può richiedere alcuni minuti…`));
+    const rep = daJson(r.report_testo);
+    mostraDaServer(rep, file.name, r.report_pdf);
+    const topo = { esito: rep.topologia.esito, errori: rep.topologia.errori, avvisi: rep.topologia.avvisi, formato };
+    statoControllo("topologia", topo.errori ? "ko" : topo.avvisi ? "warn" : "ok");
+    if (window.SERVIZI) {
+      try { // copia locale di report e pacchetto, per lo storico del mockup
+        const [pdf, zip] = await Promise.all([fetch(r.report_pdf).then((x) => x.blob()), fetch(r.errori_zip).then((x) => x.blob())]);
+        await window.SERVIZI.salvaFile(ULTIMO.id + ":topo_pdf", pdf); await window.SERVIZI.salvaFile(ULTIMO.id + ":topo_zip", zip);
+      } catch (e) { /* restano i link del server */ }
+      window.SERVIZI.aggiornaFornitura(ULTIMO.id, { topologia: topo, itemPortal: r.out_item_fornitura });
+    }
+    esitoFinale(topo, { pdf: r.report_pdf, zip: r.errori_zip }, null);
+  }
+  async function pubblicazioneVf() { // cartelle e gruppi dell'utente per il salvataggio della fornitura
+    const s = window.ACCESSO && window.ACCESSO.sessione(), box = $("#vf-accesso");
+    if (!box) return;
+    if (!s) { box.innerHTML = `<div class="msg msg-warn">Per validare e salvare la fornitura <a href="#" data-apri-accesso>accedi al Portal</a> con il pulsante in alto.</div>`; return; }
+    box.innerHTML = `<div class="small text-muted">Fornitura, report e pacchetto errori saranno salvati nel Portal come <strong>${esc(s.utente)}</strong>.</div>`;
+    const t = encodeURIComponent(s.token), portal = (CFG.portalUrl || "").replace(/\/+$/, "");
+    const [c, io] = await Promise.all([fetch(`${portal}/sharing/rest/content/users/${encodeURIComponent(s.utente)}?f=json&num=1&token=${t}`).then((x) => x.json()),
+      fetch(`${portal}/sharing/rest/community/self?f=json&token=${t}`).then((x) => x.json())]);
+    const cart = (c.folders || []).map((x) => x.title).sort((a, b) => a.localeCompare(b, "it"));
+    $("#vf-cartella").innerHTML = `<option value="" disabled selected>— scegli —</option>` + cart.map((x) => `<option>${esc(x)}</option>`).join("");
+    $("#vf-gruppi").innerHTML = (io.groups || []).map((g) => `<option value="${esc(g.id)}">${esc(g.title)}</option>`).join("") || "<option disabled>Nessun gruppo</option>";
+  }
+  pubblicazioneVf().catch(() => {});
+  document.addEventListener("accesso-cambiato", () => pubblicazioneVf().catch(() => {}));
+  document.addEventListener("click", (e) => { if (e.target.closest("#vf-accesso [data-apri-accesso]")) { e.preventDefault(); window.ACCESSO.apriPannello(); } });
+
   async function controllaSulServer(file) {
     ["completezza", "crs", "struttura", "valori", "dipendenze"].forEach((k) => statoControllo(k, "run"));
     stato("Invio della fornitura al servizio di validazione regionale…");
