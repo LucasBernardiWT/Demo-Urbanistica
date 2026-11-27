@@ -46,6 +46,19 @@
   }
   const tagVal = (tags, k) => ((tags || []).find((t) => t.startsWith(k + ":")) || "").slice(k.length + 1);
 
+  // ---------------------------------------------------------------- cartelle e gruppi dell'utente (pubblicazione)
+  async function pubblicazione() {
+    const t = encodeURIComponent(sessione.token);
+    const [c, io] = await Promise.all([fetch(`${portal}/sharing/rest/content/users/${encodeURIComponent(sessione.utente)}?f=json&num=1&token=${t}`).then((r) => r.json()),
+      fetch(`${portal}/sharing/rest/community/self?f=json&token=${t}`).then((r) => r.json())]);
+    const cartelle = (c.folders || []).map((x) => x.title).sort((a, b) => a.localeCompare(b, "it"));
+    const pred = CFG.cartellaTemplate || "";
+    if (pred && !cartelle.includes(pred)) cartelle.unshift(pred);
+    $("#rt-cartella").innerHTML = cartelle.map((x) => `<option${x === pred ? " selected" : ""}>${esc(x)}</option>`).join("");
+    $("#rt-gruppi").innerHTML = (io.groups || []).sort((a, b) => a.title.localeCompare(b.title, "it"))
+      .map((g) => `<option value="${esc(g.id)}">${esc(g.title)}</option>`).join("") || "<option disabled>Nessun gruppo</option>";
+  }
+
   // ---------------------------------------------------------------- elenco
   async function elenco() {
     sessione = leggiSessione();
@@ -55,6 +68,7 @@
       $("#rt-elenco").innerHTML = ""; $("#rt-nuove").disabled = true; return;
     }
     $("#rt-accesso").innerHTML = `<div class="msg msg-info">Accesso al Portal come <strong>${esc(sessione.utente)}</strong>.</div>`;
+    pubblicazione().catch(() => {});
     $("#rt-nuove").disabled = false;
     $("#rt-elenco").innerHTML = `<p class="small text-muted">Caricamento…</p>`;
     try {
@@ -170,12 +184,14 @@
     const li = document.createElement("li");
     $("#rt-passi").innerHTML = ""; $("#rt-passi").appendChild(li);
     li.innerHTML = `Controllo e salvataggio (UploadRegoleTopologia) <span class="text-muted">…</span>`;
+    if (!$("#rt-condivisione").value || !$("#rt-cartella").value) { li.innerHTML = `<span class="text-danger">Scegli cartella e livello di condivisione</span>`; return; }
     $("#rt-salva").disabled = true;
     try {
       const task = CFG.uploadRegoleTopologiaUrl.replace(/\/+$/, "");
       let st = await gp(task + "/submitJob", { regole: JSON.stringify(componi()), item_struttura: $("#rt-template").value,
         titolo: $("#rt-titolo").value.trim(), ambito: $("#rt-ambito").value, token: sessione.token, item_regole: stato.item || "",
-        note: $("#rt-note").value.trim(), cartella_portal: CFG.cartellaTemplate || "", condivisione: $("#rt-condivisione").value });
+        note: $("#rt-note").value.trim(), cartella_portal: $("#rt-cartella").value, condivisione: $("#rt-condivisione").value,
+        gruppi: [...$("#rt-gruppi").selectedOptions].map((o) => o.value).join(",") });
       const id = st.jobId;
       for (let i = 0; i < 100 && !/Succeeded|Failed|Cancelled|TimedOut/.test(st.jobStatus); i++) { await pausa(2000); st = await gp(`${task}/jobs/${id}`, {}); }
       if (st.jobStatus !== "esriJobSucceeded") {

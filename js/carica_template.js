@@ -143,7 +143,7 @@
     } catch (e) { archivio = null; $("#tpl-file").textContent = e.message; }
     abilita();
   }
-  function abilita() { $("#tpl-carica").disabled = !(sessione && archivio); }
+  function abilita() { $("#tpl-carica").disabled = !(sessione && archivio && $("#tpl-condivisione").value && $("#tpl-cartella-portal").value); }
 
   // ---------------------------------------------------------------- invio al servizio UploadTemplate
   async function gp(url, campi) {
@@ -244,4 +244,5 @@
   $("#tpl-carica").addEventListener("click", carica);
   $("#tpl-ambito").addEventListener("change", () => caricaRegole().catch(() => {}));
   $("#tpl-regole").addEventListener("change", abilita);
+  $("#tpl-condivisione").addEventListener("change", abilita);
 })();
