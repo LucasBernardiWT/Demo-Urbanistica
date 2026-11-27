@@ -37,7 +37,9 @@
     return (j.results || []).filter((x) => (nuovo(x) && (conRegole(x) || regione))
         || (!(x.tags || []).some((t) => t.startsWith("ambito:")) && norm(x.title).includes(filtro)))
       .map((x) => ({ id: x.id, titolo: x.title, modificato: x.modified, creato: x.created, note: x.snippet || "", proprietario: x.owner,
-                     daCompletare: nuovo(x) && !conRegole(x) }));
+                     daCompletare: nuovo(x) && !conRegole(x),
+                     struttura: ((x.tags || []).find((t) => t.startsWith("struttura:")) || "").slice(10),
+                     regole: ((x.tags || []).find((t) => t.startsWith("regole:")) || "").slice(7) }));
   }
 
   async function gp(url, body) {
@@ -48,8 +50,28 @@
     return j;
   }
 
-  // token: solo per un template appena caricato e non ancora condiviso (servizio Carica template)
+  // Struttura del template (layer, campi, codelist, dipendenze): il JSON che UploadTemplate ha ricavato dal gdb e
+  // caricato come item collegato (tag struttura:<id> sul template). Token: quello dell'accesso, se c'e'.
   async function descrivi(item, token) {
+    const tok = token || (window.ACCESSO && window.ACCESSO.sessione() && window.ACCESSO.sessione().token) || "";
+    if (item.struttura) {
+      const chiave = `tpl:${item.id}:${item.modificato}`, salvato = memo.get(chiave);
+      if (salvato) return JSON.parse(salvato);
+      const r = await fetch(`${portal}/sharing/rest/content/items/${item.struttura}/data${tok ? "?token=" + encodeURIComponent(tok) : ""}`);
+      const b = await r.arrayBuffer();
+      let m;
+      if (new Uint8Array(b)[0] === 0x50) { // zip con il JSON (il Portal non accetta .json sciolti)
+        const z = await JSZip.loadAsync(b);
+        const n = Object.keys(z.files).find((x) => /\.json$/i.test(x));
+        if (!n) throw new Error("struttura del template non leggibile");
+        m = JSON.parse(await z.file(n).async("string"));
+      } else m = JSON.parse(new TextDecoder().decode(b));
+      if (m.error) throw new Error("struttura del template non accessibile: " + (m.error.message || ""));
+      memo.set(chiave, JSON.stringify(m));
+      return m;
+    }
+    // template caricati con le versioni precedenti (senza struttura collegata): vecchio servizio, se configurato
+    if (!CFG.descriviUrl) throw new Error(`il template “${item.titolo}” non ha una struttura collegata: ricaricalo con UploadTemplate`);
     const chiave = `tpl:${item.id}:${item.modificato}`, salvato = !token && memo.get(chiave);
     if (salvato) return JSON.parse(salvato);
     const task = CFG.descriviUrl.replace(/\/+$/, "");

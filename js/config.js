@@ -33,7 +33,7 @@ window.CONFIG_MOCKUP = {
            ["settore", "Piani di settore regionali"]],
   ambitoPagina: "psc",
   templateCartella: "",
-  descriviUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/descrivi_template/GPServer/Descrivi%20template",
+  descriviUrl: "", // vecchio servizio Descrivi template (non piu' pubblicato): la struttura si legge dal JSON collegato
   // downloadTemplateUrl: web tool DownloadTemplate (template in shapefile o GeoPackage, generati dal gdb)
   downloadTemplateUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/DownloadTemplate/GPServer/DownloadTemplate",
   // appId: id dell'applicazione OAuth registrata sul Portal (accesso con l'account del Portal); vuoto = accesso non attivo
