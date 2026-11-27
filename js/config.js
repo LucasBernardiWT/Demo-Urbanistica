@@ -31,7 +31,7 @@ window.CONFIG_MOCKUP = {
   //   oppure "redirect" (ritorno automatico su oauth-callback.html, da registrare sull'applicazione del Portal)
   oauthModo: "codice",
   // uploadTemplateUrl: web tool UploadTemplate; cartellaTemplate: cartella del Portal proposta per i nuovi template
-  uploadTemplateUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/upload_template/GPServer/UploadTemplate",
+  uploadTemplateUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/UploadTemplate/GPServer/UploadTemplate",
   cartellaTemplate: "Draft Urbanistica",
   // crsTemplate: sistema di riferimento richiesto ai template (Allegato A: RDN2008 / UTM 33N)
   crsTemplate: 7792,
