@@ -63,8 +63,8 @@
   async function elenco() {
     sessione = leggiSessione();
     if (!sessione) {
-      $("#rt-accesso").innerHTML = `<div class="msg msg-warn">Per gestire le regole accedi con l'account del Portal dalla pagina
-        <a href="#/carica-template">Carica template</a>, poi torna qui.</div>`;
+      $("#rt-accesso").innerHTML = `<div class="msg msg-warn">Per gestire le regole accedi con l'account del Portal con il pulsante
+        <a href="#" data-apri-accesso>Accedi al Portal</a> in alto a destra.</div>`;
       $("#rt-elenco").innerHTML = ""; $("#rt-nuove").disabled = true; return;
     }
     $("#rt-accesso").innerHTML = `<div class="msg msg-info">Accesso al Portal come <strong>${esc(sessione.utente)}</strong>.</div>`;
@@ -241,4 +241,6 @@
     }
   };
   window.addEventListener("hashchange", vista); vista();
+  document.addEventListener("accesso-cambiato", vista);
+  document.addEventListener("click", (e) => { if (e.target.closest("[data-apri-accesso]")) { e.preventDefault(); window.ACCESSO.apriPannello(); } });
 })();

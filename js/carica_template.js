@@ -1,9 +1,6 @@
 // Servizio "Carica template" (amministratore regionale): invia una nuova versione del template al web tool
 // UploadTemplate, che la controlla, ne ricava la struttura (JSON) e carica gdb e struttura sul Portal.
-//  1. accesso con l'account del Portal (OAuth 2, applicazione registrata: CONFIG_MOCKUP.appId). Due modi
-//     (CONFIG_MOCKUP.oauthModo): "codice" = il Portal mostra un codice monouso da copiare qui, scambiato con
-//     il token (PKCE; non servono indirizzi di ritorno registrati); "redirect" = la pagina oauth-callback.html
-//     riceve il token e lo passa a questa finestra (servono gli indirizzi di ritorno registrati);
+//  1. accesso con l'account del Portal dal pulsante in alto (js/accesso.js), comune a tutte le pagine;
 //  2. il gdb scelto come cartella viene compresso nel browser (JSZip); uno zip viene usato cosi' com'e';
 //  3. lo zip va al servizio (uploads/upload), poi submitJob con titolo, note, cartella del Portal e token.
 (function () {
@@ -20,16 +17,17 @@
   let sessione = null; // { token, utente, scade }
   let archivio = null; // { blob, nome }
 
-  // ---------------------------------------------------------------- accesso al Portal (OAuth)
-  async function apriSessione(token, scadeSec) {
-    const j = await (await fetch(`${portal}/sharing/rest/community/self?f=json&token=${encodeURIComponent(token)}`)).json();
-    if (j.error || !j.username) throw new Error(j.error ? j.error.message : "accesso non riuscito");
-    if (!(j.privileges || []).includes("portal:user:createItem")) throw new Error(`l'utente ${j.username} non può creare elementi sul Portal`);
-    sessione = { token, utente: j.username, scade: Date.now() + (scadeSec || 7200) * 1000 };
-    memo.set("psc-admin", sessione);
+  // ---------------------------------------------------------------- accesso (js/accesso.js, pulsante in alto)
+  async function aggiornaSessione() {
+    sessione = window.ACCESSO ? window.ACCESSO.sessione() : null;
+    $("#tpl-modulo").disabled = !sessione;
+    $("#admin-accesso").innerHTML = sessione
+      ? `<div class="msg msg-info">Accesso al Portal come <strong>${esc(sessione.utente)}</strong>.</div>`
+      : `<div class="msg msg-warn">Per caricare un template <a href="#" id="admin-apri">accedi al Portal</a> con il pulsante in alto a destra.</div>`;
+    if (!sessione) { $("#admin-apri").onclick = (e) => { e.preventDefault(); window.ACCESSO.apriPannello(); }; abilita(); return; }
     await caricaCartelle();
-    disegnaAccesso(); abilita();
     await caricaRegole();
+    abilita();
   }
   async function caricaRegole() { // file di regole topologiche dell'ambito scelto
     if (!sessione) return;
@@ -38,71 +36,6 @@
     $("#tpl-regole").innerHTML = `<option value="">— le definisco dopo il caricamento —</option>` +
       (j.results || []).map((r) => `<option value="${esc(r.id)}">${esc(r.title)}</option>`).join("");
     abilita();
-  }
-  function disegnaAccesso(errore) {
-    const box = $("#admin-accesso");
-    $("#tpl-modulo").disabled = !sessione;
-    if (sessione) {
-      box.innerHTML = `<div class="msg msg-info">Accesso al Portal come <strong>${esc(sessione.utente)}</strong>. <a href="#" id="admin-esci">Esci</a></div>`;
-      $("#admin-esci").onclick = (e) => { e.preventDefault(); sessione = null; memo.via("psc-admin"); disegnaAccesso(); abilita(); };
-      return;
-    }
-    const err = errore ? `<div class="small text-danger mt-1">${esc(errore)}</div>` : "";
-    if (!CFG.appId) {
-      box.innerHTML = `<div class="msg msg-warn">Accesso non disponibile: l'applicazione non è ancora registrata sul Portal
-        (manca <code>appId</code> in <code>js/config.js</code>).</div>${err}`;
-      return;
-    }
-    if (CFG.oauthModo === "redirect") {
-      box.innerHTML = `<button id="admin-accedi" class="btn btn-primary btn-sm" type="button">Accedi con l'account del Portal</button>
-        <div class="small text-muted mt-1">Si apre la pagina di accesso del Portal regionale.</div>${err}`;
-      $("#admin-accedi").onclick = accedi;
-      return;
-    }
-    box.innerHTML = `<button id="admin-accedi" class="btn btn-primary btn-sm" type="button">1. Accedi con l'account del Portal</button>
-      <div class="small text-muted mt-1">Si apre la pagina di accesso del Portal regionale: dopo l'accesso mostra un codice.</div>
-      <label for="admin-codice" class="form-label-plain mt-2">2. Codice mostrato dal Portal</label>
-      <div class="d-flex gap-2"><input id="admin-codice" class="form-control form-control-sm" type="text" autocomplete="off" placeholder="Incolla il codice">
-      <button id="admin-conferma" class="btn btn-outline-primary btn-sm" type="button">Conferma</button></div>${err}`;
-    $("#admin-accedi").onclick = accediCodice;
-    $("#admin-conferma").onclick = () => confermaCodice($("#admin-codice").value.trim()).catch((x) => disegnaAccesso(x.message));
-  }
-
-  // accesso con codice (OAuth 2 + PKCE, ritorno "out of band"): il codice vale una volta e per pochi minuti
-  const OOB = "urn:ietf:wg:oauth:2.0:oob";
-  const b64url = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-  let verificatore = null;
-  async function accediCodice() {
-    verificatore = b64url(crypto.getRandomValues(new Uint8Array(48)));
-    const sfida = b64url(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verificatore)));
-    const url = `${portal}/sharing/rest/oauth2/authorize?client_id=${encodeURIComponent(CFG.appId)}&response_type=code` +
-      `&expiration=120&redirect_uri=${encodeURIComponent(OOB)}&code_challenge=${sfida}&code_challenge_method=S256`;
-    window.open(url, "oauth-portal", "width=520,height=680");
-  }
-  async function confermaCodice(codice) {
-    if (!codice) throw new Error("incolla il codice mostrato dal Portal");
-    if (!verificatore) throw new Error("prima clicca su “Accedi con l'account del Portal”");
-    const fd = new FormData();
-    for (const [k, v] of Object.entries({ client_id: CFG.appId, grant_type: "authorization_code", code: codice,
-      redirect_uri: OOB, code_verifier: verificatore, f: "json" })) fd.append(k, v);
-    const j = await (await fetch(`${portal}/sharing/rest/oauth2/token`, { method: "POST", body: fd })).json();
-    if (j.error || !j.access_token) throw new Error((j.error && (j.error_description || j.error.message || j.error)) || "codice non valido o scaduto");
-    verificatore = null;
-    await apriSessione(j.access_token, j.expires_in);
-  }
-  function accedi() {
-    const ritorno = new URL("oauth-callback.html", location.href).href;
-    const url = `${portal}/sharing/rest/oauth2/authorize?client_id=${encodeURIComponent(CFG.appId)}` +
-      `&response_type=token&expiration=120&redirect_uri=${encodeURIComponent(ritorno)}`;
-    const w = window.open(url, "oauth-portal", "width=520,height=680");
-    const ricevi = (e) => {
-      if (e.origin !== location.origin || !e.data || e.data.tipo !== "oauth") return;
-      window.removeEventListener("message", ricevi);
-      if (w) w.close();
-      if (e.data.errore || !e.data.token) disegnaAccesso(e.data.errore || "accesso annullato");
-      else apriSessione(e.data.token, e.data.scade).catch((x) => disegnaAccesso(x.message));
-    };
-    window.addEventListener("message", ricevi);
   }
   async function caricaCartelle() {
     const j = await (await fetch(`${portal}/sharing/rest/content/users/${encodeURIComponent(sessione.utente)}?f=json&num=1&token=${encodeURIComponent(sessione.token)}`)).json();
@@ -195,7 +128,7 @@
   async function carica() {
     const titolo = $("#tpl-titolo").value.trim(), filtro = CFG.templateFiltro || "template";
     $("#tpl-passi").innerHTML = "";
-    if (sessione.scade < Date.now()) { sessione = null; memo.via("psc-admin"); disegnaAccesso("sessione scaduta: accedi di nuovo"); return; }
+    if (!window.ACCESSO.sessione()) { await aggiornaSessione(); return; }
     $("#tpl-carica").disabled = true;
     const task = CFG.uploadTemplateUrl.replace(/\/+$/, ""), servizio = task.replace(/\/[^/]+$/, "");
     let p, dopo = null;
@@ -234,9 +167,8 @@
   }
 
   if (!$("#admin-accesso")) return;
-  const salvata = memo.get("psc-admin");
-  if (salvata && salvata.scade > Date.now()) apriSessione(salvata.token, (salvata.scade - Date.now()) / 1000).catch(() => disegnaAccesso());
-  else disegnaAccesso();
+  aggiornaSessione().catch(() => {});
+  document.addEventListener("accesso-cambiato", () => aggiornaSessione().catch(() => {}));
   $("#tpl-cartella").addEventListener("change", (e) => e.target.files.length && scegli(daCartella(e.target.files)));
   $("#tpl-zip").addEventListener("change", (e) => e.target.files[0] && scegli(daZip(e.target.files[0])));
   $("#tpl-titolo").addEventListener("input", abilita);

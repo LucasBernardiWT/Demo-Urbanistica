@@ -6,7 +6,7 @@
   <title>Consegna PSC/PSA – Geoportale Regione Calabria</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-italia@2.18.1/dist/css/bootstrap-italia.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-  <link rel="stylesheet" href="css/portale.css?v=20261127m">
+  <link rel="stylesheet" href="css/portale.css?v=20261127n">
 </head>
 <body>
 <a class="skip-link visually-hidden-focusable" href="#main-content">Vai al contenuto</a>
@@ -34,7 +34,7 @@
               </div>
               <span class="lingua d-none d-md-inline">ITA <svg class="ico" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></span>
               <span class="badge-mockup">MOCKUP</span>
-              <span class="btn btn-sm btn-utente"><svg class="ico" viewBox="0 0 24 24"><path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Zm0 2c-4.4 0-8 2.2-8 5v2h16v-2c0-2.8-3.6-5-8-5Z"/></svg><span class="d-none d-md-inline"> Ufficio tecnico comunale</span></span>
+              <button id="accesso-btn" class="btn btn-sm btn-utente" type="button" aria-controls="accesso-pannello">Accedi al Portal</button>
             </div>
           </div>
         </div></div>
@@ -63,6 +63,13 @@
     </div>
   </div>
 </header>
+<div id="accesso-pannello" class="container position-relative" hidden>
+  <div class="card card-body shadow position-absolute end-0 mt-2" style="z-index:1050;width:360px;max-width:calc(100vw - 32px)">
+    <div class="d-flex justify-content-between align-items-center mb-2"><strong class="small">Accesso al Portal regionale</strong>
+      <button id="accesso-chiudi" class="btn-close" type="button" aria-label="Chiudi"></button></div>
+    <div id="accesso-contenuto"></div>
+  </div>
+</div>
 
 <main id="main-content" tabindex="-1">
   <section class="page-header-band text-white text-center">
@@ -583,15 +590,16 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/shpjs/3.6.3/shp.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/rbush@3.0.1/rbush.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js"></script>
-<script src="js/config.js?v=20261127m"></script>
-<script src="js/template_portal.js?v=20261127m"></script>
-<script src="js/tavole_qtrp.js?v=20261127m"></script>
-<script src="js/comuni_calabria.js?v=20261127m"></script>
-<script src="js/topologia.js?v=20261127m"></script>
-<script src="js/app.js?v=20261127m"></script>
-<script src="js/carica_template.js?v=20261127m"></script>
-<script src="js/regole_topologia.js?v=20261127m"></script>
-<script src="js/template_regole.js?v=20261127m"></script>
-<script src="js/servizi.js?v=20261127m"></script>
+<script src="js/config.js?v=20261127n"></script>
+<script src="js/accesso.js?v=20261127n"></script>
+<script src="js/template_portal.js?v=20261127n"></script>
+<script src="js/tavole_qtrp.js?v=20261127n"></script>
+<script src="js/comuni_calabria.js?v=20261127n"></script>
+<script src="js/topologia.js?v=20261127n"></script>
+<script src="js/app.js?v=20261127n"></script>
+<script src="js/carica_template.js?v=20261127n"></script>
+<script src="js/regole_topologia.js?v=20261127n"></script>
+<script src="js/template_regole.js?v=20261127n"></script>
+<script src="js/servizi.js?v=20261127n"></script>
 </body>
 </html>
