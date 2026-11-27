@@ -6,7 +6,7 @@
   <title>Consegna PSC/PSA – Geoportale Regione Calabria</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-italia@2.18.1/dist/css/bootstrap-italia.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-  <link rel="stylesheet" href="css/portale.css?v=20261127u">
+  <link rel="stylesheet" href="css/portale.css?v=20261127v">
 </head>
 <body>
 <a class="skip-link visually-hidden-focusable" href="#main-content">Vai al contenuto</a>
@@ -110,7 +110,7 @@
         <a class="servizio" href="#/le-mie-tavole">
           <svg viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5"/></svg>
           <span class="s-titolo">Le mie tavole</span>
-          <span class="s-desc">Carica i PDF delle tavole previste dal QTRP e gestiscili: sostituisci, scarica, elimina.</span>
+          <span class="s-desc">Carica i PDF delle tavole del piano e gestiscili: sostituisci, scarica, elimina.</span>
           <span class="s-btn">Apri <svg class="ico" viewBox="0 0 24 24"><path d="M5 11h11.2l-4.6-4.6L13 5l7 7-7 7-1.4-1.4 4.6-4.6H5z"/></svg></span></a>
         <a class="servizio" href="#/gestione">
           <svg viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Zm0 0v14m6-12v14"/></svg>
@@ -456,18 +456,16 @@
 
     <!-- ===================== LE MIE TAVOLE (PDF SUL PORTAL) ===================== -->
     <div class="vista" data-vista="le-mie-tavole" hidden>
-      <p class="mb-3">I PDF delle tavole del piano, salvati nel tuo account del Portal. Per ogni tavola indichi l'elaborato del QTRP a cui
-        corrisponde; le tavole si raccolgono poi, con la fornitura dei dati, nel pacchetto da inviare alla Regione.</p>
+      <p class="mb-3">I PDF delle tavole del piano, salvati nel tuo account del Portal con titolo e Comune. Le tavole si raccolgono poi,
+        con la fornitura dei dati, nel pacchetto da inviare alla Regione.</p>
       <div id="lt-accesso"></div>
       <div id="lt-area" hidden>
         <div class="row g-3 mb-3 align-items-end">
           <div class="col-md-4"><label for="lt-cartella" class="form-label-plain">Cartella del Portal</label>
             <select id="lt-cartella" class="form-select form-select-sm"></select></div>
-          <div class="col-md-3"><label for="lt-comune" class="form-label-plain">Comune</label>
+          <div class="col-md-4"><label for="lt-comune" class="form-label-plain">Comune</label>
             <select id="lt-comune" class="form-select form-select-sm"><option value="">Tutti</option></select></div>
-          <div class="col-md-3"><label for="lt-elaborato" class="form-label-plain">Elaborato</label>
-            <select id="lt-elaborato" class="form-select form-select-sm"><option value="">Tutti</option></select></div>
-          <div class="col-md-2 text-md-end"><button id="lt-nuova" class="btn btn-primary btn-sm" type="button">+ Carica una tavola</button></div>
+          <div class="col-md-4 text-md-end"><button id="lt-nuova" class="btn btn-primary btn-sm" type="button">+ Carica una tavola</button></div>
         </div>
         <div id="lt-esito-op" class="small mb-2"></div>
         <div id="lt-modulo" class="card card-body mb-4" hidden>
@@ -477,8 +475,6 @@
               <input id="lt-n-file" class="form-control form-control-sm" type="file" accept=".pdf,application/pdf"></div>
             <div class="col-md-6"><label for="lt-n-titolo" class="form-label-plain">Titolo <span class="text-muted">(facoltativo: altrimenti il nome del file)</span></label>
               <input id="lt-n-titolo" class="form-control form-control-sm" type="text"></div>
-            <div class="col-md-6"><label for="lt-n-codice" class="form-label-plain">Elaborato del QTRP</label>
-              <select id="lt-n-codice" class="form-select form-select-sm"></select></div>
             <div class="col-md-6"><label for="lt-n-comune" class="form-label-plain">Comune</label>
               <input id="lt-n-comune" class="form-control form-control-sm" type="text" list="lt-n-comune-lista" autocomplete="off" placeholder="Scrivi il nome del Comune">
               <datalist id="lt-n-comune-lista"></datalist></div>
@@ -659,18 +655,18 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/shpjs/3.6.3/shp.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/rbush@3.0.1/rbush.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js"></script>
-<script src="js/config.js?v=20261127u"></script>
-<script src="js/accesso.js?v=20261127u"></script>
-<script src="js/template_portal.js?v=20261127u"></script>
-<script src="js/tavole_qtrp.js?v=20261127u"></script>
-<script src="js/comuni_calabria.js?v=20261127u"></script>
-<script src="js/topologia.js?v=20261127u"></script>
-<script src="js/app.js?v=20261127u"></script>
-<script src="js/carica_template.js?v=20261127u"></script>
-<script src="js/regole_topologia.js?v=20261127u"></script>
-<script src="js/forniture_portal.js?v=20261127u"></script>
-<script src="js/tavole_portal.js?v=20261127u"></script>
-<script src="js/template_regole.js?v=20261127u"></script>
-<script src="js/servizi.js?v=20261127u"></script>
+<script src="js/config.js?v=20261127v"></script>
+<script src="js/accesso.js?v=20261127v"></script>
+<script src="js/template_portal.js?v=20261127v"></script>
+<script src="js/tavole_qtrp.js?v=20261127v"></script>
+<script src="js/comuni_calabria.js?v=20261127v"></script>
+<script src="js/topologia.js?v=20261127v"></script>
+<script src="js/app.js?v=20261127v"></script>
+<script src="js/carica_template.js?v=20261127v"></script>
+<script src="js/regole_topologia.js?v=20261127v"></script>
+<script src="js/forniture_portal.js?v=20261127v"></script>
+<script src="js/tavole_portal.js?v=20261127v"></script>
+<script src="js/template_regole.js?v=20261127v"></script>
+<script src="js/servizi.js?v=20261127v"></script>
 </body>
 </html>

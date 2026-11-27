@@ -1,7 +1,6 @@
 // "Le mie tavole": i PDF delle tavole del piano salvati sul Portal (web tool UploadTavola), cartella per cartella,
-// con filtri per Comune ed elaborato. Per ogni tavola: scarica, sostituisci il PDF (UploadTavola con item_tavola),
+// con filtro per Comune. Una tavola e' il PDF con titolo e Comune. Per ogni tavola: scarica, sostituisci il PDF (UploadTavola con item_tavola),
 // elimina (EliminaTavola). Le tavole si raccolgono poi, con la fornitura, nel pacchetto di invio alla Regione.
-// Elaborati dal catalogo delle tavole del QTRP (window.TAVOLE_QTRP, item CONFIG_MOCKUP.tavoleItem).
 // L'accesso e' quello del pulsante in alto (js/accesso.js).
 (function () {
   "use strict";
@@ -15,7 +14,6 @@
   const pausa = (ms) => new Promise((r) => setTimeout(r, ms));
   const TAG = "urb-tavola";
   let sessione = null, tavole = [], sostituisci = null;
-  const elaborati = () => Object.fromEntries((window.TAVOLE_QTRP || []).flatMap((g) => g.tavole.map((t) => [t.codice, { ...t, macro: g.macro }])));
 
   // ---------------------------------------------------------------- accesso, cartelle, gruppi
   async function avvio() {
@@ -25,7 +23,6 @@
       $("#lt-area").hidden = true; return;
     }
     $("#lt-accesso").innerHTML = ""; $("#lt-area").hidden = false;
-    await (window.TAVOLE_PRONTE || Promise.resolve());
     const t = encodeURIComponent(sessione.token);
     const [c, io] = await Promise.all([fetch(`${portal}/sharing/rest/content/users/${encodeURIComponent(sessione.utente)}?f=json&num=1&token=${t}`).then((x) => x.json()),
       fetch(`${portal}/sharing/rest/community/self?f=json&token=${t}`).then((x) => x.json())]);
@@ -36,11 +33,7 @@
         cart.map((x) => `<option value="${esc(sel === "#lt-cartella" ? x.id : x.title)}"${(sel === "#lt-cartella" ? x.id : x.title) === prima ? " selected" : ""}>${esc(x.title)}</option>`).join("");
     }
     $("#lt-n-gruppi").innerHTML = (io.groups || []).map((g) => `<option value="${esc(g.id)}">${esc(g.title)}</option>`).join("") || "<option disabled>Nessun gruppo</option>";
-    const E = elaborati();
-    $("#lt-n-codice").innerHTML = `<option value="" disabled selected>— scegli l'elaborato —</option>` +
-      (window.TAVOLE_QTRP || []).map((g) => `<optgroup label="${esc(g.macro)}">${g.tavole.map((x) => `<option value="${esc(x.codice)}">${esc(x.nome)} (${esc(x.codice)})</option>`).join("")}</optgroup>`).join("");
     $("#lt-n-comune-lista").innerHTML = (window.COMUNI_CALABRIA || []).map((x) => `<option value="${esc(x)}">`).join("");
-    if (!Object.keys(E).length) $("#lt-esito-op").innerHTML = `<span class="text-danger">Catalogo delle tavole non disponibile.</span>`;
     if ($("#lt-cartella").value) await carica();
     else $("#lt-elenco").innerHTML = `<div class="vuoto">Scegli la cartella del Portal in cui sono salvate le tavole.</div>`;
   }
@@ -58,24 +51,21 @@
         start = j.nextStart > 0 ? j.nextStart : 0;
       }
       const comuni = [...new Set(tavole.map((x) => tagVal(x.tags, "comune")).filter(Boolean))].sort((a, b) => a.localeCompare(b, "it"));
-      const sc = $("#lt-comune").value, se = $("#lt-elaborato").value, E = elaborati();
+      const sc = $("#lt-comune").value;
       $("#lt-comune").innerHTML = `<option value="">Tutti</option>` + comuni.map((x) => `<option${x === sc ? " selected" : ""}>${esc(x)}</option>`).join("");
-      const codici = [...new Set(tavole.map((x) => tagVal(x.tags, "codice")).filter(Boolean))].sort();
-      $("#lt-elaborato").innerHTML = `<option value="">Tutti</option>` + codici.map((x) => `<option value="${esc(x)}"${x === se ? " selected" : ""}>${esc(E[x] ? E[x].nome : x)}</option>`).join("");
       disegna();
     } catch (e) { $("#lt-elenco").innerHTML = `<div class="msg msg-err">Tavole non disponibili: ${esc(e.message)}</div>`; }
   }
   function disegna() {
-    const fc = $("#lt-comune").value, fe = $("#lt-elaborato").value, E = elaborati();
-    const righe = tavole.filter((x) => (!fc || tagVal(x.tags, "comune") === fc) && (!fe || tagVal(x.tags, "codice") === fe)).sort((a, b) => b.modified - a.modified);
+    const fc = $("#lt-comune").value;
+    const righe = tavole.filter((x) => !fc || tagVal(x.tags, "comune") === fc).sort((a, b) => b.modified - a.modified);
     if (!tavole.length) { $("#lt-elenco").innerHTML = `<div class="vuoto">Nessuna tavola in questa cartella.</div>`; return; }
     if (!righe.length) { $("#lt-elenco").innerHTML = `<div class="vuoto">Nessuna tavola con questi filtri.</div>`; return; }
     $("#lt-elenco").innerHTML = `<div class="table-responsive"><table class="table table-sm tab-report align-middle"><thead><tr>
-      <th>Aggiornata</th><th>Comune</th><th>Elaborato</th><th>Tavola</th><th></th></tr></thead><tbody>` +
+      <th>Aggiornata</th><th>Comune</th><th>Tavola</th><th></th></tr></thead><tbody>` +
       righe.map((x) => {
-        const cod = tagVal(x.tags, "codice"), el = E[cod], inviata = (x.tags || []).includes("urb-inviata");
+        const inviata = (x.tags || []).includes("urb-inviata");
         return `<tr><td>${data(x.modified)}</td><td>${esc(tagVal(x.tags, "comune"))}</td>
-          <td>${esc(el ? el.nome : cod)}<div class="small text-muted">${esc(el ? el.macro : "")} · ${esc(cod)}</div></td>
           <td><strong>${esc(x.title)}</strong>${inviata ? ' <span class="pill pill-blu">inviata</span>' : ""}<div class="small text-muted">${esc(x.name || "")}</div></td>
           <td class="text-nowrap"><a href="#" class="btn btn-outline-secondary btn-sm" data-scarica="${esc(x.id)}" data-nome="${esc(x.name || x.title + ".pdf")}">Scarica</a>
             ${inviata ? "" : `<button class="btn btn-outline-primary btn-sm" type="button" data-sostituisci="${esc(x.id)}">Sostituisci PDF</button>
@@ -113,20 +103,18 @@
     $("#lt-modulo-titolo").textContent = item ? `Sostituisci il PDF di “${item.title}”` : "Carica una tavola";
     $("#lt-n-file").value = "";
     $("#lt-n-titolo").value = item ? item.title : "";
-    $("#lt-n-codice").value = item ? tagVal(item.tags, "codice") : "";
     $("#lt-n-comune").value = item ? tagVal(item.tags, "comune") : "";
-    $("#lt-n-codice").disabled = $("#lt-n-comune").disabled = false;
     $("#lt-modulo").scrollIntoView({ behavior: "smooth" });
   }
   async function invia() {
     const f = $("#lt-n-file").files[0], comune = $("#lt-n-comune").value.trim();
-    const mancano = [!f && "il PDF", !$("#lt-n-codice").value && "l'elaborato", !(window.COMUNI_CALABRIA || []).includes(comune) && "il Comune",
+    const mancano = [!f && "il PDF", !(window.COMUNI_CALABRIA || []).includes(comune) && "il Comune",
       !$("#lt-n-cartella").value && "la cartella", !$("#lt-n-condivisione").value && "la condivisione"].filter(Boolean);
     if (mancano.length) { $("#lt-esito-op").innerHTML = `<span class="text-danger">Manca ${mancano.join(", ")}.</span>`; return; }
     $("#lt-invia").disabled = true;
     $("#lt-esito-op").innerHTML = `<span class="text-muted">${sostituisci ? "Sostituzione" : "Caricamento"} della tavola (UploadTavola)…</span>`;
     try {
-      await lavoro(CFG.uploadTavolaUrl, { codice: $("#lt-n-codice").value, item_catalogo: CFG.tavoleItem, comune, ambito: CFG.ambitoPagina,
+      await lavoro(CFG.uploadTavolaUrl, { comune, ambito: CFG.ambitoPagina,
         titolo: $("#lt-n-titolo").value.trim(), token: sessione.token, item_tavola: sostituisci ? sostituisci.id : "",
         cartella_portal: $("#lt-n-cartella").value, condivisione: $("#lt-n-condivisione").value,
         gruppi: [...$("#lt-n-gruppi").selectedOptions].map((o) => o.value).join(",") }, f);
@@ -153,7 +141,6 @@
 
   $("#lt-cartella").addEventListener("change", () => carica());
   $("#lt-comune").addEventListener("change", disegna);
-  $("#lt-elaborato").addEventListener("change", disegna);
   $("#lt-nuova").addEventListener("click", () => apriModulo(null));
   $("#lt-annulla").addEventListener("click", () => { $("#lt-modulo").hidden = true; sostituisci = null; });
   $("#lt-invia").addEventListener("click", invia);
