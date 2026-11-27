@@ -18,6 +18,9 @@ window.CONFIG_MOCKUP = {
   // registroUrl: tabella hosted del registro forniture (vuoto = non ancora pubblicata)
   validaFornituraUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/ValidaFornitura/GPServer/ValidaFornitura",
   registroUrl: "",
+  // salvaPacchettoUrl / eliminaPacchettoUrl: web tool del pacchetto di invio (pagina Componi il pacchetto)
+  salvaPacchettoUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/SalvaPacchetto/GPServer/SalvaPacchetto",
+  eliminaPacchettoUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/EliminaPacchetto/GPServer/EliminaPacchetto",
   // uploadTavolaUrl / eliminaTavolaUrl: web tool delle tavole PDF (pagina Le mie tavole)
   uploadTavolaUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/UploadTavola/GPServer/UploadTavola",
   eliminaTavolaUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/EliminaTavola/GPServer/EliminaTavola",
