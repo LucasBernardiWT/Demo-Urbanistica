@@ -52,14 +52,22 @@
           return `<tr data-template="${esc(t.id)}"><td>${esc(t.title)}<div class="small text-muted">pubblicato il ${data(t.created)}</div></td><td>${esc(amb)}</td><td>${attuali}</td>
             <td><select class="form-select form-select-sm tr-regole"${mio ? "" : " disabled"}>${cand.map((r) => `<option value="${esc(r.id)}"${r.id === ora ? " selected" : ""}>${esc(r.title)}</option>`).join("") || "<option value=''>nessun file di regole</option>"}</select>
               ${mio ? "" : `<div class="small text-muted">template di ${esc(t.owner)}</div>`}</td>
-            <td><button class="btn btn-primary btn-sm tr-associa" type="button" disabled>Associa</button></td></tr>`;
+            <td class="text-nowrap"><button class="btn btn-primary btn-sm tr-associa" type="button" disabled>Associa</button>
+              ${mio && ora ? `<button class="btn btn-outline-danger btn-sm tr-rimuovi" type="button">Rimuovi</button>` : ""}</td></tr>`;
         }).join("") + "</tbody></table></div>";
       document.querySelectorAll("#tr-elenco tr[data-template]").forEach((tr) => {
         const sel = tr.querySelector(".tr-regole"), btn = tr.querySelector(".tr-associa");
         const ora = tagVal((tpl.find((t) => t.id === tr.dataset.template) || {}).tags, "regole");
         const aggiorna = () => { btn.disabled = sel.disabled || !sel.value || sel.value === ora; };
         sel.onchange = aggiorna; aggiorna();
-        btn.onclick = () => associa(tr.dataset.template, sel.value, tr.querySelector("td").firstChild.textContent);
+        const nome = tr.querySelector("td").firstChild.textContent;
+        btn.onclick = () => associa(tr.dataset.template, sel.value, nome);
+        const via = tr.querySelector(".tr-rimuovi");
+        if (via) via.onclick = () => {
+          if (confirm(`Rimuovere le regole topologiche da “${nome}”?
+
+Il template tornerà “regole da definire” e non si potrà usare per validare le forniture finché non gli associ altre regole.`)) associa(tr.dataset.template, "", nome);
+        };
       });
     } catch (e) { $("#tr-elenco").innerHTML = `<div class="msg msg-err">Elenco non disponibile: ${esc(e.message)}</div>`; }
   }
@@ -67,18 +75,19 @@
   async function associa(template, regole, nome) {
     const li = document.createElement("li");
     $("#tr-passi").innerHTML = ""; $("#tr-passi").appendChild(li);
-    li.innerHTML = `${esc(nome)}: controllo e associazione (AssociaRegoleTopologia) <span class="text-muted">…</span>`;
-    document.querySelectorAll(".tr-associa").forEach((b) => { b.disabled = true; });
+    li.innerHTML = `${esc(nome)}: ${regole ? "controllo e associazione" : "rimozione delle regole"} (AssociaRegoleTopologia) <span class="text-muted">…</span>`;
+    document.querySelectorAll(".tr-associa, .tr-rimuovi").forEach((b) => { b.disabled = true; });
     try {
       const task = CFG.associaRegoleUrl.replace(/\/+$/, "");
-      let st = await gp(task + "/submitJob", { item_template: template, item_regole: regole, token: sessione.token });
+      let st = await gp(task + "/submitJob", { item_template: template, azione: regole ? "associa" : "rimuovi", item_regole: regole || "", token: sessione.token });
       const id = st.jobId;
       for (let i = 0; i < 100 && !/Succeeded|Failed|Cancelled|TimedOut/.test(st.jobStatus); i++) { await pausa(2000); st = await gp(`${task}/jobs/${id}`, {}); }
       if (st.jobStatus !== "esriJobSucceeded") {
         const m = (st.messages || []).filter((x) => /Error/.test(x.type) && !/^Failed/.test(x.description)).map((x) => x.description.trim()).join(" · ");
         throw new Error(m || st.jobStatus);
       }
-      li.innerHTML = `${esc(nome)}: <span class="text-success">regole associate – le prossime validazioni useranno le nuove regole</span>`;
+      li.innerHTML = `${esc(nome)}: <span class="text-success">${regole ? "regole associate – le prossime validazioni useranno le nuove regole"
+        : "regole rimosse – il template è “regole da definire” e non si può usare per validare"}</span>`;
     } catch (e) {
       li.innerHTML = `${esc(nome)}: <span class="text-danger">errore – ${esc(e.message)}</span>`;
     }

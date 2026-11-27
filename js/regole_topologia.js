@@ -205,7 +205,7 @@
         li2.innerHTML = `Associazione a “${esc(stato.template.titolo)}” (AssociaRegoleTopologia) <span class="text-muted">…</span>`;
         try {
           const t2 = CFG.associaRegoleUrl.replace(/\/+$/, "");
-          let s2 = await gp(t2 + "/submitJob", { item_template: stato.template.id, item_regole: item, token: sessione.token });
+          let s2 = await gp(t2 + "/submitJob", { item_template: stato.template.id, azione: "associa", item_regole: item, token: sessione.token });
           for (let i = 0; i < 100 && !/Succeeded|Failed|Cancelled|TimedOut/.test(s2.jobStatus); i++) { await pausa(2000); s2 = await gp(`${t2}/jobs/${s2.jobId}`, {}); }
           if (s2.jobStatus !== "esriJobSucceeded") throw new Error((s2.messages || []).filter((x) => /Error/.test(x.type) && !/^Failed/.test(x.description)).map((x) => x.description.trim()).join(" · ") || s2.jobStatus);
           li2.innerHTML = `Associazione a “${esc(stato.template.titolo)}” <span class="text-success">fatto – il template è completo</span>`;

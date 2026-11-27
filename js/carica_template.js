@@ -117,7 +117,7 @@
       $("#tpl-pr-conferma").disabled = true;
       $("#tpl-pr-esito").innerHTML = `<span class="text-muted">Controllo e associazione (AssociaRegoleTopologia)…</span>`;
       try {
-        await lavoro(CFG.associaRegoleUrl, { item_template: t.gdb, item_regole: r, token: sessione.token });
+        await lavoro(CFG.associaRegoleUrl, { item_template: t.gdb, azione: "associa", item_regole: r, token: sessione.token });
         $("#tpl-pr-esito").innerHTML = `<span class="text-success">Regole associate: il template è completo.</span>`;
         if (window.TEMPLATE) await window.TEMPLATE.aggiorna();
       } catch (e) { $("#tpl-pr-esito").innerHTML = `<span class="text-danger">${esc(e.message)}</span>`; }
