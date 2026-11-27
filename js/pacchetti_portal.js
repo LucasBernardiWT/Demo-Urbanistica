@@ -108,7 +108,10 @@
     const scelta = m ? (m.fornitura && m.fornitura.item) : $("#pk-n-fornitura").value;
     const spuntate = m ? (m.tavole || []).map((t) => t.item) : [...document.querySelectorAll("#pk-n-tavole input:checked")].map((x) => x.value);
     [forniture, tavole] = await Promise.all([cerca(`tags:"urb-fornitura" AND tags:"comune:${comune}"`), cerca(`tags:"urb-tavola" AND tags:"comune:${comune}"`)]);
-    forniture = forniture.filter((x) => tagVal(x.tags, "comune") === comune); tavole = tavole.filter((x) => tagVal(x.tags, "comune") === comune);
+    // la ricerca del Portal spezza i tag sui trattini: "urb-fornitura" trova anche report ed errori ("urb-fornitura-report"…),
+    // quindi si tengono solo gli item con il tag esatto (le forniture caricate) e del Comune scelto
+    forniture = forniture.filter((x) => (x.tags || []).includes("urb-fornitura") && tagVal(x.tags, "comune") === comune);
+    tavole = tavole.filter((x) => (x.tags || []).includes("urb-tavola") && tagVal(x.tags, "comune") === comune);
     $("#pk-n-fornitura").innerHTML = `<option value="">— nessuna (bozza) —</option>` + forniture.map((x) =>
       `<option value="${esc(x.id)}"${x.id === scelta ? " selected" : ""}>${esc(x.title)} – ${esc(esito(x.snippet) || "esito non noto")} (${data(x.modified)})</option>`).join("");
     $("#pk-n-tavole").innerHTML = tavole.length ? tavole.map((x) => `<div class="form-check"><input class="form-check-input" type="checkbox" id="pk-t-${esc(x.id)}" value="${esc(x.id)}"${spuntate.includes(x.id) ? " checked" : ""}>
