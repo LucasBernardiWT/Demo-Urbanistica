@@ -73,7 +73,8 @@
           <td class="text-nowrap small"><a href="#" data-scarica="${esc(f.id)}" data-nome="${esc(f.name || f.title + ".zip")}">zip</a>
             ${rep ? ` · <a href="#" data-scarica="${esc(rep)}" data-nome="${esc(f.title)}_report.pdf">report</a>` : ""}
             ${err ? ` · <a href="#" data-scarica="${esc(err)}" data-nome="${esc(f.title)}_errori.zip">errori</a>` : ""}</td>
-          <td><a class="btn btn-outline-primary btn-sm text-nowrap" href="#/verifica/${esc(f.id)}">Sostituisci con un nuovo zip</a></td></tr>`;
+          <td class="text-nowrap"><a class="btn btn-outline-primary btn-sm" href="#/verifica/${esc(f.id)}">Sostituisci con un nuovo zip</a>
+            <button class="btn btn-outline-danger btn-sm" type="button" data-elimina="${esc(f.id)}" data-titolo="${esc(f.title)}">Elimina</button></td></tr>`;
       }).join("") + "</tbody></table></div>";
   }
 
@@ -84,12 +85,39 @@
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }
 
+  // eliminazione: web tool EliminaFornitura (le forniture inviate alla Regione non si eliminano: EF04)
+  const pausa = (ms) => new Promise((r) => setTimeout(r, ms));
+  async function gp(url, campi) {
+    const fd = new FormData();
+    for (const [k, v] of Object.entries({ ...campi, f: "json" })) fd.append(k, v);
+    const j = await (await fetch(url, { method: "POST", body: fd })).json();
+    if (j.error) throw new Error(j.error.message || "errore del servizio");
+    return j;
+  }
+  async function elimina(id, titolo) {
+    if (!confirm(`Eliminare la fornitura “${titolo}”?\n\nVengono eliminati dal Portal lo zip caricato, il report PDF e il pacchetto errori. ` +
+      "L'operazione non si può annullare. Nel registro resta traccia della fornitura, segnata come eliminata.")) return;
+    $("#fp-esito-op").innerHTML = `<span class="text-muted">Eliminazione di “${esc(titolo)}” (EliminaFornitura)…</span>`;
+    try {
+      const task = CFG.eliminaFornituraUrl.replace(/\/+$/, "");
+      let st = await gp(task + "/submitJob", { item_fornitura: id, token: sessione.token, registro_url: CFG.registroUrl || "" });
+      for (let i = 0; i < 100 && !/Succeeded|Failed|Cancelled|TimedOut/.test(st.jobStatus); i++) { await pausa(2000); st = await gp(`${task}/jobs/${st.jobId}`, {}); }
+      if (st.jobStatus !== "esriJobSucceeded") {
+        throw new Error((st.messages || []).filter((x) => /Error/.test(x.type) && !/^Failed/.test(x.description)).map((x) => x.description.trim()).join(" · ") || st.jobStatus);
+      }
+      $("#fp-esito-op").innerHTML = `<span class="text-success">Fornitura “${esc(titolo)}” eliminata.</span>`;
+      await carica();
+    } catch (e) { $("#fp-esito-op").innerHTML = `<span class="text-danger">${esc(e.message)}</span>`; }
+  }
+
   $("#fp-cartella").addEventListener("change", () => carica());
   $("#fp-comune").addEventListener("change", disegna);
   $("#fp-esito").addEventListener("change", disegna);
   $("#fp-elenco").addEventListener("click", (e) => {
     const a = e.target.closest("[data-scarica]");
     if (a) { e.preventDefault(); scarica(a.dataset.scarica, a.dataset.nome).catch((x) => alert("Download non riuscito: " + x.message)); }
+    const b = e.target.closest("[data-elimina]");
+    if (b) elimina(b.dataset.elimina, b.dataset.titolo);
   });
   $("#fp-accesso").addEventListener("click", (e) => { if (e.target.closest("[data-apri-accesso]")) { e.preventDefault(); window.ACCESSO.apriPannello(); } });
   const vista = () => { if (location.hash === "#/forniture") cartelle().catch((e) => { $("#fp-elenco").innerHTML = `<div class="msg msg-err">${esc(e.message)}</div>`; }); };

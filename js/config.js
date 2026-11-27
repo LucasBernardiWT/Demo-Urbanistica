@@ -18,6 +18,8 @@ window.CONFIG_MOCKUP = {
   // registroUrl: tabella hosted del registro forniture (vuoto = non ancora pubblicata)
   validaFornituraUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/ValidaFornitura/GPServer/ValidaFornitura",
   registroUrl: "",
+  // eliminaFornituraUrl: web tool EliminaFornitura (fornitura + report + pacchetto errori; registro: "eliminata")
+  eliminaFornituraUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/EliminaFornitura/GPServer/EliminaFornitura",
   portalUrl: "https://geohub-coll.regione.calabria.it/portal",
   tavoleItem: "ec041abfa08946c1a00aef046fb87886",
   // Template di riferimento (js/template_portal.js): item "File Geodatabase" del Portal con questa sottostringa nel
