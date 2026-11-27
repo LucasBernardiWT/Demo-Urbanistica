@@ -27,6 +27,9 @@ window.CONFIG_MOCKUP = {
   esportaUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/esporta_template/GPServer/Esporta%20template",
   // appId: id dell'applicazione OAuth registrata sul Portal (accesso con l'account del Portal); vuoto = accesso non attivo
   appId: "T1PQUbU9iD1BAhGw",
+  // oauthModo: "codice" (il Portal mostra un codice da copiare; non servono indirizzi di ritorno registrati)
+  //   oppure "redirect" (ritorno automatico su oauth-callback.html, da registrare sull'applicazione del Portal)
+  oauthModo: "codice",
   // uploadTemplateUrl: web tool UploadTemplate; cartellaTemplate: cartella del Portal proposta per i nuovi template
   uploadTemplateUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/upload_template/GPServer/UploadTemplate",
   cartellaTemplate: "Draft Urbanistica",

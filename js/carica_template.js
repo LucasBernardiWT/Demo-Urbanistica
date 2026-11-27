@@ -1,7 +1,9 @@
 // Servizio "Carica template" (amministratore regionale): invia una nuova versione del template al web tool
 // UploadTemplate, che la controlla, ne ricava la struttura (JSON) e carica gdb e struttura sul Portal.
-//  1. accesso con l'account del Portal (OAuth 2, applicazione registrata: CONFIG_MOCKUP.appId; la pagina
-//     oauth-callback.html riceve il token e lo passa a questa finestra);
+//  1. accesso con l'account del Portal (OAuth 2, applicazione registrata: CONFIG_MOCKUP.appId). Due modi
+//     (CONFIG_MOCKUP.oauthModo): "codice" = il Portal mostra un codice monouso da copiare qui, scambiato con
+//     il token (PKCE; non servono indirizzi di ritorno registrati); "redirect" = la pagina oauth-callback.html
+//     riceve il token e lo passa a questa finestra (servono gli indirizzi di ritorno registrati);
 //  2. il gdb scelto come cartella viene compresso nel browser (JSZip); uno zip viene usato cosi' com'e';
 //  3. lo zip va al servizio (uploads/upload), poi submitJob con titolo, note, cartella del Portal e token.
 (function () {
@@ -42,9 +44,42 @@
         (manca <code>appId</code> in <code>js/config.js</code>).</div>${err}`;
       return;
     }
-    box.innerHTML = `<button id="admin-accedi" class="btn btn-primary btn-sm" type="button">Accedi con l'account del Portal</button>
-      <div class="small text-muted mt-1">Si apre la pagina di accesso del Portal regionale.</div>${err}`;
-    $("#admin-accedi").onclick = accedi;
+    if (CFG.oauthModo === "redirect") {
+      box.innerHTML = `<button id="admin-accedi" class="btn btn-primary btn-sm" type="button">Accedi con l'account del Portal</button>
+        <div class="small text-muted mt-1">Si apre la pagina di accesso del Portal regionale.</div>${err}`;
+      $("#admin-accedi").onclick = accedi;
+      return;
+    }
+    box.innerHTML = `<button id="admin-accedi" class="btn btn-primary btn-sm" type="button">1. Accedi con l'account del Portal</button>
+      <div class="small text-muted mt-1">Si apre la pagina di accesso del Portal regionale: dopo l'accesso mostra un codice.</div>
+      <label for="admin-codice" class="form-label-plain mt-2">2. Codice mostrato dal Portal</label>
+      <div class="d-flex gap-2"><input id="admin-codice" class="form-control form-control-sm" type="text" autocomplete="off" placeholder="Incolla il codice">
+      <button id="admin-conferma" class="btn btn-outline-primary btn-sm" type="button">Conferma</button></div>${err}`;
+    $("#admin-accedi").onclick = accediCodice;
+    $("#admin-conferma").onclick = () => confermaCodice($("#admin-codice").value.trim()).catch((x) => disegnaAccesso(x.message));
+  }
+
+  // accesso con codice (OAuth 2 + PKCE, ritorno "out of band"): il codice vale una volta e per pochi minuti
+  const OOB = "urn:ietf:wg:oauth:2.0:oob";
+  const b64url = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  let verificatore = null;
+  async function accediCodice() {
+    verificatore = b64url(crypto.getRandomValues(new Uint8Array(48)));
+    const sfida = b64url(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verificatore)));
+    const url = `${portal}/sharing/rest/oauth2/authorize?client_id=${encodeURIComponent(CFG.appId)}&response_type=code` +
+      `&expiration=120&redirect_uri=${encodeURIComponent(OOB)}&code_challenge=${sfida}&code_challenge_method=S256`;
+    window.open(url, "oauth-portal", "width=520,height=680");
+  }
+  async function confermaCodice(codice) {
+    if (!codice) throw new Error("incolla il codice mostrato dal Portal");
+    if (!verificatore) throw new Error("prima clicca su “Accedi con l'account del Portal”");
+    const fd = new FormData();
+    for (const [k, v] of Object.entries({ client_id: CFG.appId, grant_type: "authorization_code", code: codice,
+      redirect_uri: OOB, code_verifier: verificatore, f: "json" })) fd.append(k, v);
+    const j = await (await fetch(`${portal}/sharing/rest/oauth2/token`, { method: "POST", body: fd })).json();
+    if (j.error || !j.access_token) throw new Error((j.error && (j.error_description || j.error.message || j.error)) || "codice non valido o scaduto");
+    verificatore = null;
+    await apriSessione(j.access_token, j.expires_in);
   }
   function accedi() {
     const ritorno = new URL("oauth-callback.html", location.href).href;
