@@ -45,6 +45,28 @@ window.CONFIG_MOCKUP = {
   // valori proposti per le regole nuove (li decide il frontend: il web tool non ha valori predefiniti)
   uploadRegoleTopologiaUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/UploadRegoleTopologia/GPServer/UploadRegoleTopologia",
   regoleTag: "urb-regole-topologia",
+  // associaRegoleUrl: web tool AssociaRegoleTopologia (pagina "Template e regole topologiche")
+  associaRegoleUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/AssociaRegoleTopologia/GPServer/AssociaRegoleTopologia",
+  // regolePredefinite: il primo set di regole del template PSC (pulsante "Popola con le regole predefinite")
+  regolePredefinite: {
+    tolleranze: { area_minima_errore_m2: 4, distanza_confine_m: 20, sliver_area_m2: 0.36, sliver_sottigliezza: 0.03, cuspide_angolo_gradi: 1 },
+    livelli: { copertura_fuori_tolleranza: "AVVISO", contenimento_fuori_tolleranza: "AVVISO", multiparte: "AVVISO", cuspide: "AVVISO" },
+    strati: {
+      zoneprg: { disgiunzione: "tutti", copertura: true },
+      macrozone: { disgiunzione: "tutti", copertura: true },
+      sistemi: { disgiunzione: "tutti", copertura: true },
+      modalitaintervento: { disgiunzione: "tutti", copertura: true },
+      modalitauso: { disgiunzione: "tutti", copertura: true },
+      classifattibilitapiano: { disgiunzione: "tutti", copertura: false },
+      componentiatu: { disgiunzione: "tutti", copertura: false },
+      unitapaesaggio: { disgiunzione: "tutti", copertura: false },
+      rischi: { disgiunzione: "Tipologia", copertura: false },
+      sottosistemiambientale: { disgiunzione: "Risorsa", copertura: false },
+      sottosistemirelazionale: { disgiunzione: "Tipologia", copertura: false }
+    },
+    confine_comunale: { servizio: "https://geohub-coll.regione.calabria.it/server/rest/services/viewer_catastale/istat_limiti/FeatureServer/0",
+                        campo_nome: "comune", campo_regione: "cod_reg", codice_regione: 18 },
+  },
   regoleNuove: {
     tolleranze: { area_minima_errore_m2: 4, distanza_confine_m: 20, sliver_area_m2: 0.36, sliver_sottigliezza: 0.03, cuspide_angolo_gradi: 1 },
     livelli: { copertura_fuori_tolleranza: "AVVISO", contenimento_fuori_tolleranza: "AVVISO", multiparte: "AVVISO", cuspide: "AVVISO" },

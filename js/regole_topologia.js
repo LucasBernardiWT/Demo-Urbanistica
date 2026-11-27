@@ -1,8 +1,9 @@
 // Servizio "Regole topologiche" (amministratore regionale): crea e modifica i file di regole topologiche che
 // si associano ai template (UploadTemplate) e che ValidaFornitura usa per la topologia.
 //  - elenco: item del Portal con il tag CONFIG_MOCKUP.regoleTag, con i template che li usano (tag regole:<id>);
-//  - editor: parte dalla struttura JSON di un template (layer poligonali e loro campi), oppure da regole esistenti
-//    (Modifica = stesso item; Duplica = regole nuove);
+//  - editor: le regole non dipendono da un template (lo stesso file serve piu' template); scegliere un template
+//    serve solo a proporne i layer poligonali e i campi. Si parte vuoti, dalle regole predefinite
+//    (CONFIG_MOCKUP.regolePredefinite) o da regole esistenti (Modifica = stesso item; Duplica = regole nuove);
 //  - salvataggio: web tool UploadRegoleTopologia (controlla schema e compatibilita' con il template e, in modifica,
 //    con tutti i template che usano le regole).
 // L'accesso e' quello della pagina "Carica template" (stessa sessione del browser).
@@ -60,7 +61,7 @@
       const [regole, tpl] = await Promise.all([cerca(`tags:"${CFG.regoleTag}"`),
         cerca(`type:"File Geodatabase" AND (tags:"${CFG.templateTag}" OR tags:"psc-template")`)]);
       templateRif = tpl.filter((t) => tagVal(t.tags, "struttura")).map((t) => ({ id: t.id, titolo: t.title, struttura: tagVal(t.tags, "struttura"), regole: tagVal(t.tags, "regole") }));
-      $("#rt-template").innerHTML = templateRif.map((t) => `<option value="${t.struttura}">${esc(t.titolo)}</option>`).join("") || "<option value=''>Nessun template</option>";
+      $("#rt-template").innerHTML = `<option value="">— nessuno: layer delle regole —</option>` + templateRif.map((t) => `<option value="${t.struttura}">${esc(t.titolo)}</option>`).join("");
       if (!regole.length) { $("#rt-elenco").innerHTML = `<p class="small text-muted">Nessun file di regole sul Portal: creane uno con “Nuove regole”.</p>`; return; }
       $("#rt-elenco").innerHTML = `<div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Regole</th><th>Ambito</th><th>Modificate</th><th>Usate da</th><th></th></tr></thead><tbody>` +
         regole.map((r) => {
@@ -83,54 +84,76 @@
     try {
       const base = item ? await leggiJson(item.id) : JSON.parse(JSON.stringify(CFG.regoleNuove || {}));
       if (!base.strati) base.strati = {};
-      const rif = item && ((item.description || "").match(/struttura ([0-9a-f]{32})/) || [])[1];
       stato = { item: item && !duplica ? item.id : null, base, usate: item ? templateRif.filter((t) => t.regole === item.id) : [] };
       $("#rt-titolo").value = item ? (duplica ? item.title + " (copia)" : item.title) : "";
       $("#rt-note").value = item ? (item.snippet || "") : "";
       $("#rt-ambito").value = item ? tagVal(item.tags, "ambito") || CFG.ambitoPagina : CFG.ambitoPagina;
-      if (rif && templateRif.some((t) => t.struttura === rif)) $("#rt-template").value = rif;
+      $("#rt-template").value = "";
       $("#rt-intestazione").textContent = stato.item ? `Modifica: ${item.title}` : (item ? `Nuove regole (copia di ${item.title})` : "Nuove regole");
       $("#rt-avviso").innerHTML = stato.item && stato.usate.length
         ? `<div class="msg msg-warn">Queste regole sono usate da ${stato.usate.map((t) => `<strong>${esc(t.titolo)}</strong>`).join(", ")}: la modifica vale per le
            validazioni future di tutti questi template. Per non toccarli usa “Duplica”.</div>` : "";
-      $("#rt-toll").innerHTML = TOLL.map(([k, et, aiuto]) => `<div class="col-md-6"><label class="form-label-plain" for="rt-t-${k}">${et}</label>
-        <input id="rt-t-${k}" class="form-control form-control-sm" type="number" min="0" step="any" value="${esc((base.tolleranze || {})[k] ?? "")}">
-        <div class="small text-muted">${aiuto}</div></div>`).join("");
-      $("#rt-liv").innerHTML = LIV.map(([k, et]) => `<div class="col-md-6"><label class="form-label-plain" for="rt-l-${k}">${et}</label>
-        <select id="rt-l-${k}" class="form-select form-select-sm">${["ERRORE", "AVVISO"].map((x) => `<option${(base.livelli || {})[k] === x ? " selected" : ""}>${x}</option>`).join("")}</select></div>`).join("");
       $("#rt-editor").hidden = false;
-      await layer();
+      await disegna();
       $("#rt-editor").scrollIntoView({ behavior: "smooth" });
     } catch (e) { $("#rt-passi").innerHTML = `<li class="text-danger">Regole non leggibili: ${esc(e.message)}</li>`; }
   }
-  async function layer() { // righe dei layer poligonali del template di riferimento
-    const id = $("#rt-template").value;
-    if (!id) { $("#rt-layer").innerHTML = ""; return; }
-    $("#rt-layer").innerHTML = `<tr><td colspan="4" class="text-muted small">Caricamento della struttura…</td></tr>`;
-    try {
-      stato.struttura = await leggiJson(id);
-      const s = stato.base.strati;
-      const pol = stato.struttura.layer.filter((l) => /poly/i.test(l.geometria));
-      const fuori = Object.keys(s).filter((k) => !pol.some((l) => l.nome.toLowerCase() === k.toLowerCase()));
-      $("#rt-layer").innerHTML = pol.map((l) => {
-        const r = s[l.nome.toLowerCase()] || s[l.nome] || null;
-        const d = r ? r.disgiunzione : "tutti";
-        const opz = [["", "non controllata"], ["tutti", "tra tutti i record"], ...l.campi.map((c) => [c.nome, `solo a parità di “${c.nome}”`])];
-        return `<tr data-layer="${esc(l.nome.toLowerCase())}"><td><input type="checkbox" class="form-check-input rt-usa"${r ? " checked" : ""}></td><td>${esc(l.nome)}</td>
-          <td><select class="form-select form-select-sm rt-disg">${opz.map(([v, t]) => `<option value="${esc(v)}"${(d ?? "") === v ? " selected" : ""}>${esc(t)}</option>`).join("")}</select></td>
-          <td><input type="checkbox" class="form-check-input rt-cop"${r && r.copertura ? " checked" : ""}></td></tr>`;
-      }).join("") + (fuori.length ? `<tr><td colspan="4" class="small text-danger">Nelle regole ci sono layer che questo template non ha (verranno tolti): ${esc(fuori.join(", "))}</td></tr>` : "");
-    } catch (e) { $("#rt-layer").innerHTML = `<tr><td colspan="4" class="text-danger small">Struttura non leggibile: ${esc(e.message)}</td></tr>`; }
+  async function disegna() { // tolleranze, livelli e layer dalle regole in stato.base
+    const base = stato.base;
+    $("#rt-toll").innerHTML = TOLL.map(([k, et, aiuto]) => `<div class="col-md-6"><label class="form-label-plain" for="rt-t-${k}">${et}</label>
+      <input id="rt-t-${k}" class="form-control form-control-sm" type="number" min="0" step="any" value="${esc((base.tolleranze || {})[k] ?? "")}">
+      <div class="small text-muted">${aiuto}</div></div>`).join("");
+    $("#rt-liv").innerHTML = LIV.map(([k, et]) => `<div class="col-md-6"><label class="form-label-plain" for="rt-l-${k}">${et}</label>
+      <select id="rt-l-${k}" class="form-select form-select-sm">${["ERRORE", "AVVISO"].map((x) => `<option${(base.livelli || {})[k] === x ? " selected" : ""}>${x}</option>`).join("")}</select></div>`).join("");
+    await layer();
   }
-  function componi() {
+  function riga(nome, r, campi, nota) { // una riga della tabella dei layer; campi = null se il layer non e' nel template scelto
+    const d = r ? r.disgiunzione : "tutti";
+    const disg = campi
+      ? `<select class="form-select form-select-sm rt-disg">${[["", "non controllata"], ["tutti", "tra tutti i record"],
+          ...campi.map((c) => [c, `solo a parità di “${c}”`]), ...(d && d !== "tutti" && !campi.includes(d) ? [[d, `“${d}” (campo non presente)`]] : [])]
+          .map(([v, t]) => `<option value="${esc(v)}"${(d ?? "") === v ? " selected" : ""}>${esc(t)}</option>`).join("")}</select>`
+      : `<input class="form-control form-control-sm rt-disg" type="text" value="${esc(d ?? "")}" placeholder="tutti, nome di un campo, o vuoto">`;
+    return `<tr data-layer="${esc(nome)}"><td><input type="checkbox" class="form-check-input rt-usa"${r ? " checked" : ""}></td>
+      <td>${esc(nome)}${nota ? `<div class="small text-warning">${esc(nota)}</div>` : ""}</td><td>${disg}</td>
+      <td><input type="checkbox" class="form-check-input rt-cop"${r && r.copertura ? " checked" : ""}></td></tr>`;
+  }
+  async function layer() { // layer delle regole, piu' quelli poligonali del template scelto (facoltativo)
+    const id = $("#rt-template").value, s = stato.base.strati || {};
+    let pol = null;
+    if (id) {
+      $("#rt-layer").innerHTML = `<tr><td colspan="4" class="text-muted small">Caricamento della struttura…</td></tr>`;
+      try { pol = (await leggiJson(id)).layer.filter((l) => /poly/i.test(l.geometria)); }
+      catch (e) { $("#rt-layer").innerHTML = `<tr><td colspan="4" class="text-danger small">Struttura non leggibile: ${esc(e.message)}</td></tr>`; return; }
+    }
+    const nomi = pol ? pol.map((l) => l.nome.toLowerCase()) : [];
+    const righe = (pol || []).map((l) => riga(l.nome.toLowerCase(), s[l.nome.toLowerCase()] || null, l.campi.map((c) => c.nome)))
+      .concat(Object.keys(s).filter((k) => !nomi.includes(k)).map((k) => riga(k, s[k], null, pol ? "non presente nel template scelto" : "")));
+    $("#rt-layer").innerHTML = righe.join("") || `<tr><td colspan="4" class="small text-muted">Nessun layer: scegli un template, aggiungi un layer o popola con le regole predefinite.</td></tr>`;
+  }
+  function leggiEditor() { // lo stato dell'editor torna in stato.base (per ridisegnare senza perdere le modifiche)
     const r = { ...stato.base, tolleranze: {}, livelli: {}, strati: {} };
     for (const [k] of TOLL) r.tolleranze[k] = Number($(`#rt-t-${k}`).value);
     for (const [k] of LIV) r.livelli[k] = $(`#rt-l-${k}`).value;
     document.querySelectorAll("#rt-layer tr[data-layer]").forEach((tr) => {
       if (!tr.querySelector(".rt-usa").checked) return;
-      r.strati[tr.dataset.layer] = { disgiunzione: tr.querySelector(".rt-disg").value || null, copertura: tr.querySelector(".rt-cop").checked };
+      r.strati[tr.dataset.layer] = { disgiunzione: tr.querySelector(".rt-disg").value.trim() || null, copertura: tr.querySelector(".rt-cop").checked };
     });
     return r;
+  }
+  const componi = leggiEditor;
+  function aggiungiLayer() {
+    const n = $("#rt-nuovo-layer").value.trim().toLowerCase();
+    if (!n) return;
+    stato.base = leggiEditor();
+    if (!stato.base.strati[n]) stato.base.strati[n] = { disgiunzione: "tutti", copertura: false };
+    $("#rt-nuovo-layer").value = "";
+    layer();
+  }
+  async function predefinite() {
+    if (Object.keys(leggiEditor().strati).length && !confirm("Sostituire layer, tolleranze e gravità con le regole predefinite?")) return;
+    stato.base = JSON.parse(JSON.stringify(CFG.regolePredefinite));
+    await disegna();
   }
 
   // ---------------------------------------------------------------- salvataggio (UploadRegoleTopologia)
@@ -168,7 +191,9 @@
 
   $("#rt-ambito").innerHTML = (CFG.ambiti || []).map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join("");
   $("#rt-nuove").onclick = () => apri(null, false);
-  $("#rt-template").onchange = () => stato && layer();
+  $("#rt-template").onchange = () => { if (stato) { stato.base = leggiEditor(); layer(); } };
+  $("#rt-aggiungi").onclick = aggiungiLayer;
+  $("#rt-predefinite").onclick = predefinite;
   $("#rt-salva").onclick = salva;
   $("#rt-annulla").onclick = () => { $("#rt-editor").hidden = true; stato = null; };
   const vista = () => { if (location.hash === "#/regole-topologia") elenco(); };
