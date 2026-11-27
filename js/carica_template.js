@@ -101,6 +101,10 @@
     const pred = CFG.cartellaTemplate || "Draft Urbanistica";
     if (!cartelle.includes(pred)) cartelle.unshift(pred);
     $("#tpl-cartella-portal").innerHTML = cartelle.map((c) => `<option${c === pred ? " selected" : ""}>${esc(c)}</option>`).join("");
+    // gruppi dell'utente, per la condivisione facoltativa
+    const io = await (await fetch(`${portal}/sharing/rest/community/self?f=json&token=${encodeURIComponent(sessione.token)}`)).json();
+    $("#tpl-gruppi").innerHTML = (io.groups || []).sort((a, b) => a.title.localeCompare(b.title, "it"))
+      .map((g) => `<option value="${esc(g.id)}">${esc(g.title)}</option>`).join("") || "<option disabled>Nessun gruppo</option>";
   }
 
   // ---------------------------------------------------------------- scelta del template
@@ -160,7 +164,8 @@
 
       p = passo("Controllo, struttura e caricamento sul Portal (UploadTemplate)");
       let st = await gp(task + "/submitJob", { template: JSON.stringify({ itemID: up.item.itemID }), titolo, note: $("#tpl-note").value.trim(),
-        token: sessione.token, cartella_portal: $("#tpl-cartella-portal").value, condividi: "true", solo_verifica: "false" });
+        token: sessione.token, cartella_portal: $("#tpl-cartella-portal").value, condivisione: $("#tpl-condivisione").value,
+        gruppi: [...$("#tpl-gruppi").selectedOptions].map((o) => o.value).join(","), solo_verifica: "false" });
       const id = st.jobId;
       for (let i = 0; i < 200 && !/Succeeded|Failed|Cancelled|TimedOut/.test(st.jobStatus); i++) { await pausa(2000); st = await gp(`${task}/jobs/${id}`, {}); }
       if (st.jobStatus !== "esriJobSucceeded") {
@@ -174,7 +179,7 @@
 
       p = passo("Aggiornamento dell'elenco delle versioni");
       if (window.TEMPLATE) await window.TEMPLATE.aggiorna();
-      p(true, `“${titolo}” è la versione corrente`);
+      p(true, $("#tpl-condivisione").value === "tutti" ? `“${titolo}” è la versione corrente` : `“${titolo}” caricato (${$("#tpl-condivisione").value})`);
       archivio = null; $("#tpl-file").textContent = "Nessun file scelto"; $("#tpl-titolo").value = ""; $("#tpl-note").value = "";
     } catch (e) {
       if (p) p(false, e.message);

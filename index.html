@@ -6,7 +6,7 @@
   <title>Consegna PSC/PSA – Geoportale Regione Calabria</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-italia@2.18.1/dist/css/bootstrap-italia.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-  <link rel="stylesheet" href="css/portale.css?v=20261127c">
+  <link rel="stylesheet" href="css/portale.css?v=20261127d">
 </head>
 <body>
 <a class="skip-link visually-hidden-focusable" href="#main-content">Vai al contenuto</a>
@@ -187,6 +187,20 @@
             <label for="tpl-cartella-portal" class="form-label-plain">Cartella del Portal</label>
             <select id="tpl-cartella-portal" class="form-select form-select-sm"></select>
           </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-5">
+              <label for="tpl-condivisione" class="form-label-plain">Condivisione</label>
+              <select id="tpl-condivisione" class="form-select form-select-sm">
+                <option value="tutti" selected>Tutti (pubblico)</option>
+                <option value="organizzazione">Organizzazione</option>
+                <option value="privato">Privato</option>
+              </select>
+            </div>
+            <div class="col-md-7">
+              <label for="tpl-gruppi" class="form-label-plain">Gruppi <span class="text-muted">(facoltativo)</span></label>
+              <select id="tpl-gruppi" class="form-select form-select-sm" multiple size="3"></select>
+            </div>
+          </div>
           <button id="tpl-carica" class="btn btn-primary btn-sm" type="button" disabled>Carica sul Portal</button>
           </fieldset>
           <ol id="tpl-passi" class="small mt-3"></ol>
@@ -196,7 +210,8 @@
             <div class="callout-title"><svg class="ico" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 15h-2v-6h2v6Zm0-8h-2V7h2v2Z"/></svg> Come funziona</div>
             <p>Accedi con il tuo account del Portal. Il template viene inviato al servizio <strong>UploadTemplate</strong>, che controlla che tutti i layer siano in RDN2008 (EPSG:7792): se non lo sono, non viene caricato nulla.</p>
             <p>Il servizio ricava la struttura del template (layer, campi, codelist e dipendenze) e carica nella cartella scelta due elementi collegati: il File Geodatabase e il JSON della struttura.</p>
-            <p class="mb-0">Entrambi vengono condivisi con tutti: il template diventa la versione corrente per i Comuni.</p>
+            <p class="mb-0">Entrambi vengono condivisi al livello scelto (ed eventualmente con i gruppi indicati). Condiviso con tutti,
+              il template diventa la versione corrente per i Comuni; privato o con l'organizzazione resta visibile solo a chi può accedervi.</p>
           </div>
         </div>
       </div>
@@ -471,13 +486,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/shpjs/3.6.3/shp.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/rbush@3.0.1/rbush.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js"></script>
-<script src="js/config.js?v=20261127c"></script>
-<script src="js/template_portal.js?v=20261127c"></script>
-<script src="js/tavole_qtrp.js?v=20261127c"></script>
-<script src="js/comuni_calabria.js?v=20261127c"></script>
-<script src="js/topologia.js?v=20261127c"></script>
-<script src="js/app.js?v=20261127c"></script>
-<script src="js/carica_template.js?v=20261127c"></script>
-<script src="js/servizi.js?v=20261127c"></script>
+<script src="js/config.js?v=20261127d"></script>
+<script src="js/template_portal.js?v=20261127d"></script>
+<script src="js/tavole_qtrp.js?v=20261127d"></script>
+<script src="js/comuni_calabria.js?v=20261127d"></script>
+<script src="js/topologia.js?v=20261127d"></script>
+<script src="js/app.js?v=20261127d"></script>
+<script src="js/carica_template.js?v=20261127d"></script>
+<script src="js/servizi.js?v=20261127d"></script>
 </body>
 </html>
