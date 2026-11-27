@@ -6,7 +6,7 @@
   <title>Consegna PSC/PSA – Geoportale Regione Calabria</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-italia@2.18.1/dist/css/bootstrap-italia.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-  <link rel="stylesheet" href="css/portale.css?v=20261127t">
+  <link rel="stylesheet" href="css/portale.css?v=20261127u">
 </head>
 <body>
 <a class="skip-link visually-hidden-focusable" href="#main-content">Vai al contenuto</a>
@@ -107,10 +107,10 @@
           <span class="s-titolo">Le mie forniture</span>
           <span class="s-desc">Storico delle verifiche con i report. Scegli la versione conforme su cui comporre le tavole.</span>
           <span class="s-btn">Apri <svg class="ico" viewBox="0 0 24 24"><path d="M5 11h11.2l-4.6-4.6L13 5l7 7-7 7-1.4-1.4 4.6-4.6H5z"/></svg></span></a>
-        <a class="servizio" href="#/tavole">
+        <a class="servizio" href="#/le-mie-tavole">
           <svg viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5"/></svg>
-          <span class="s-titolo">Composizione delle tavole</span>
-          <span class="s-desc">Crea le tavole previste dal QTRP associando i layer caricati e il PDF dell'elaborato.</span>
+          <span class="s-titolo">Le mie tavole</span>
+          <span class="s-desc">Carica i PDF delle tavole previste dal QTRP e gestiscili: sostituisci, scarica, elimina.</span>
           <span class="s-btn">Apri <svg class="ico" viewBox="0 0 24 24"><path d="M5 11h11.2l-4.6-4.6L13 5l7 7-7 7-1.4-1.4 4.6-4.6H5z"/></svg></span></a>
         <a class="servizio" href="#/gestione">
           <svg viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Zm0 0v14m6-12v14"/></svg>
@@ -454,6 +454,49 @@
       </div>
     </div>
 
+    <!-- ===================== LE MIE TAVOLE (PDF SUL PORTAL) ===================== -->
+    <div class="vista" data-vista="le-mie-tavole" hidden>
+      <p class="mb-3">I PDF delle tavole del piano, salvati nel tuo account del Portal. Per ogni tavola indichi l'elaborato del QTRP a cui
+        corrisponde; le tavole si raccolgono poi, con la fornitura dei dati, nel pacchetto da inviare alla Regione.</p>
+      <div id="lt-accesso"></div>
+      <div id="lt-area" hidden>
+        <div class="row g-3 mb-3 align-items-end">
+          <div class="col-md-4"><label for="lt-cartella" class="form-label-plain">Cartella del Portal</label>
+            <select id="lt-cartella" class="form-select form-select-sm"></select></div>
+          <div class="col-md-3"><label for="lt-comune" class="form-label-plain">Comune</label>
+            <select id="lt-comune" class="form-select form-select-sm"><option value="">Tutti</option></select></div>
+          <div class="col-md-3"><label for="lt-elaborato" class="form-label-plain">Elaborato</label>
+            <select id="lt-elaborato" class="form-select form-select-sm"><option value="">Tutti</option></select></div>
+          <div class="col-md-2 text-md-end"><button id="lt-nuova" class="btn btn-primary btn-sm" type="button">+ Carica una tavola</button></div>
+        </div>
+        <div id="lt-esito-op" class="small mb-2"></div>
+        <div id="lt-modulo" class="card card-body mb-4" hidden>
+          <h3 id="lt-modulo-titolo" class="h6"></h3>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6"><label for="lt-n-file" class="form-label-plain">PDF della tavola</label>
+              <input id="lt-n-file" class="form-control form-control-sm" type="file" accept=".pdf,application/pdf"></div>
+            <div class="col-md-6"><label for="lt-n-titolo" class="form-label-plain">Titolo <span class="text-muted">(facoltativo: altrimenti il nome del file)</span></label>
+              <input id="lt-n-titolo" class="form-control form-control-sm" type="text"></div>
+            <div class="col-md-6"><label for="lt-n-codice" class="form-label-plain">Elaborato del QTRP</label>
+              <select id="lt-n-codice" class="form-select form-select-sm"></select></div>
+            <div class="col-md-6"><label for="lt-n-comune" class="form-label-plain">Comune</label>
+              <input id="lt-n-comune" class="form-control form-control-sm" type="text" list="lt-n-comune-lista" autocomplete="off" placeholder="Scrivi il nome del Comune">
+              <datalist id="lt-n-comune-lista"></datalist></div>
+            <div class="col-md-4"><label for="lt-n-cartella" class="form-label-plain">Cartella del Portal</label>
+              <select id="lt-n-cartella" class="form-select form-select-sm"></select></div>
+            <div class="col-md-3"><label for="lt-n-condivisione" class="form-label-plain">Condivisione</label>
+              <select id="lt-n-condivisione" class="form-select form-select-sm"><option value="" selected disabled>— scegli —</option>
+                <option value="privato">Privato</option><option value="organizzazione">Organizzazione</option><option value="tutti">Tutti (pubblico)</option></select></div>
+            <div class="col-md-5"><label for="lt-n-gruppi" class="form-label-plain">Gruppi <span class="text-muted">(facoltativo)</span></label>
+              <select id="lt-n-gruppi" class="form-select form-select-sm" multiple size="2"></select></div>
+          </div>
+          <div class="d-flex gap-2"><button id="lt-invia" class="btn btn-primary btn-sm" type="button">Salva sul Portal</button>
+            <button id="lt-annulla" class="btn btn-outline-secondary btn-sm" type="button">Annulla</button></div>
+        </div>
+        <div id="lt-elenco"></div>
+      </div>
+    </div>
+
     <!-- ===================== TAVOLE ===================== -->
     <div class="vista" data-vista="tavole" hidden>
       <div class="row g-4">
@@ -616,17 +659,18 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/shpjs/3.6.3/shp.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/rbush@3.0.1/rbush.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js"></script>
-<script src="js/config.js?v=20261127t"></script>
-<script src="js/accesso.js?v=20261127t"></script>
-<script src="js/template_portal.js?v=20261127t"></script>
-<script src="js/tavole_qtrp.js?v=20261127t"></script>
-<script src="js/comuni_calabria.js?v=20261127t"></script>
-<script src="js/topologia.js?v=20261127t"></script>
-<script src="js/app.js?v=20261127t"></script>
-<script src="js/carica_template.js?v=20261127t"></script>
-<script src="js/regole_topologia.js?v=20261127t"></script>
-<script src="js/forniture_portal.js?v=20261127t"></script>
-<script src="js/template_regole.js?v=20261127t"></script>
-<script src="js/servizi.js?v=20261127t"></script>
+<script src="js/config.js?v=20261127u"></script>
+<script src="js/accesso.js?v=20261127u"></script>
+<script src="js/template_portal.js?v=20261127u"></script>
+<script src="js/tavole_qtrp.js?v=20261127u"></script>
+<script src="js/comuni_calabria.js?v=20261127u"></script>
+<script src="js/topologia.js?v=20261127u"></script>
+<script src="js/app.js?v=20261127u"></script>
+<script src="js/carica_template.js?v=20261127u"></script>
+<script src="js/regole_topologia.js?v=20261127u"></script>
+<script src="js/forniture_portal.js?v=20261127u"></script>
+<script src="js/tavole_portal.js?v=20261127u"></script>
+<script src="js/template_regole.js?v=20261127u"></script>
+<script src="js/servizi.js?v=20261127u"></script>
 </body>
 </html>

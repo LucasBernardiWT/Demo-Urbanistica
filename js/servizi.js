@@ -25,6 +25,7 @@ Promise.all([window.TAVOLE_PRONTE, window.MODELLO_PRONTO]).then(function () {
     "carica-template": ["Carica template", "Pubblica sul Portal una nuova versione del template dei dati (amministratore regionale)."],
     verifica: ["Carica e verifica la fornitura", "Carica i dati del piano: vengono validati rispetto al template del QTRP e salvati con il report."],
     forniture: ["Le mie forniture", "Storico delle verifiche e versione di lavoro di ogni Comune."],
+    "le-mie-tavole": ["Le mie tavole", "I PDF delle tavole del piano previste dal QTRP, salvati sul Portal."],
     tavole: ["Composizione delle tavole", "Le tavole del piano previste dal QTRP, collegate ai layer della versione di lavoro."],
     gestione: ["Visualizza, modifica e valida le tavole", "Le tavole salvate o inviate, sulla mappa e con il controllo di coerenza."],
     tavola: ["Tavola", ""],
