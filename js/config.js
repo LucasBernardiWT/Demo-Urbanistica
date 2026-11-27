@@ -23,8 +23,8 @@ window.CONFIG_MOCKUP = {
   templateTag: "psc-template",
   templateCartella: "",
   descriviUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/descrivi_template/GPServer/Descrivi%20template",
-  // esportaUrl: servizio esporta_template (shapefile o GeoPackage dal gdb del template)
-  esportaUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/esporta_template/GPServer/Esporta%20template",
+  // downloadTemplateUrl: web tool DownloadTemplate (template in shapefile o GeoPackage, generati dal gdb)
+  downloadTemplateUrl: "https://geohub-coll.regione.calabria.it/server/rest/services/draft_urbanistica/DownloadTemplate/GPServer/DownloadTemplate",
   // appId: id dell'applicazione OAuth registrata sul Portal (accesso con l'account del Portal); vuoto = accesso non attivo
   appId: "T1PQUbU9iD1BAhGw",
   // oauthModo: "codice" (il Portal mostra un codice da copiare; non servono indirizzi di ritorno registrati)

@@ -17,7 +17,7 @@
   // ---------------------------------------------------------------- 1. template
   // storico delle versioni pubblicate sul Portal (js/template_portal.js), dalla piu' recente (corrente).
   // Download: il File Geodatabase e' l'item stesso; shapefile e GeoPackage li genera dal gdb il tool
-  // "Esporta template" del servizio valida_attributi.
+  // web tool DownloadTemplate.
   const portalUrl = ((window.CONFIG_MOCKUP || {}).portalUrl || "").replace(/\/+$/, "");
   const dataIt = (ms) => (ms ? new Date(ms).toLocaleDateString("it-IT") : "");
   function storicoTemplate() {
@@ -41,12 +41,16 @@
     const testo = b.textContent;
     b.disabled = true; b.textContent = "Preparazione…";
     try {
-      const task = CFG.esportaUrl.replace(/\/+$/, "");
+      const task = CFG.downloadTemplateUrl.replace(/\/+$/, "");
       const fd = new FormData(); fd.append("item_template", b.dataset.id); fd.append("formato", b.dataset.esporta);
       let st = await gp(task + "/submitJob", fd);
       const id = st.jobId;
       for (let i = 0; i < 150 && !/Succeeded|Failed|Cancelled|TimedOut/.test(st.jobStatus); i++) { await pausa(1500); st = await gp(`${task}/jobs/${id}`); }
-      if (st.jobStatus !== "esriJobSucceeded") throw new Error("il servizio ha restituito " + st.jobStatus);
+      if (st.jobStatus !== "esriJobSucceeded") {
+        // messaggio del tool (codice DTnn e motivo), senza le righe generiche del server
+        const m = (st.messages || []).filter((x) => /Error/.test(x.type) && !/^Failed/.test(x.description)).map((x) => x.description.trim()).join(" · ");
+        throw new Error(m || "il servizio ha restituito " + st.jobStatus);
+      }
       location.href = (await gp(`${task}/jobs/${id}/results/template_zip`)).value.url;
     } catch (x) {
       alert("Impossibile preparare il template: " + x.message);
